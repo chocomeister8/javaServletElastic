@@ -46,7 +46,7 @@ public class ElasticSearchClientProvider {
                 new BasicHeader("Authorization", "Basic " + auth)
             })
             .build();
-
+            
         // Create high-level client
         RestClientTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
         ElasticsearchClient esClient = new ElasticsearchClient(transport);
