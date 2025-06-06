@@ -34,7 +34,9 @@ public class ElasticUserIndexCreator {
                 .properties("password", p -> p.keyword(k -> k))
                 .properties("email", p -> p.keyword(k -> k))
                 .properties("age", p -> p.integer(i -> i))
-                .properties("dateOfBirth", p -> p.date(d -> d.format("yyyy-MM-dd")))
+                .properties("dateOfBirth", p -> p.keyword(k -> k)) // or p.date(...) if always valid format
+                .properties("status", p -> p.keyword(k -> k))
+                .properties("groups", p -> p.keyword(k -> k))
             )
         );
 

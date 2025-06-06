@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, Form, Button, Container, Row, Col, Alert } from "react-bootstrap";
 
 const LoginForm = () => {
@@ -6,34 +7,41 @@ const LoginForm = () => {
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const response = await fetch("http://localhost:8080/servletapp/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: "include", // 🔑 allows cookies to be sent and received
-      });
+  try {
+    const response = await fetch("http://localhost:8080/servletapp/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+      credentials: "include",
+    });
 
-      const data = await response.json();
+    const data = await response.json();
+    console.log("Response status:", response.status);
+    console.log("Response data:", data);
 
-      if (response.ok) {
-        localStorage.setItem("token", data.token);
-        setToken(data.token);
-        setError("");
-        window.location.href = "/home";
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError("Login failed. Please try again.");
+    if (response.ok) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("authenticated", "true");
+
+      setToken(data.token);
+      setError("");
+      navigate("/home");
+    } else {
+      setError(data.error || "Unknown error");
     }
-  };
+  } catch (err) {
+    console.error("Login failed with error:", err);
+    setError("Login failed. Please try again.");
+  }
+};
 
   return (
     <Container className="d-flex vh-100 justify-content-center align-items-center">

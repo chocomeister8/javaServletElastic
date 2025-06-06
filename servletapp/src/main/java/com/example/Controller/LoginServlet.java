@@ -43,6 +43,7 @@ public class LoginServlet extends HttpServlet {
         mapper.writeValue(response.getWriter(), result);
         
     } catch (Exception e) {
+        e.printStackTrace(); // add this to print server logs
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
