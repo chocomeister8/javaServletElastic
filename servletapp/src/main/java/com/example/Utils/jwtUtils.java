@@ -10,7 +10,7 @@ import java.util.Date;
 public class jwtUtils {
     private static final String SECRET = "your-256-bit-secret"; // store securely
     private static final Algorithm ALGORITHM = Algorithm.HMAC256(SECRET);
-    private static final long EXPIRATION_TIME = 1000 * 60; // 1 minute
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 minute
 
     public static String generateToken(String userEmail) {
         return JWT.create()

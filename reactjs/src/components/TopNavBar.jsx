@@ -2,11 +2,13 @@ import React from "react";
 import axios from "axios";
 import { Navbar, Nav, Container, Button } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
 
 const TopNavBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const currentPath = location.pathname;
+  const currentPath = location.pathname;  
+  const [isAuthenticated, setIsAuthenticated] = useState();
 
   const handleLogout = async () => {
     try {
@@ -21,7 +23,8 @@ const TopNavBar = () => {
 
       if (response.status === 200) {
         localStorage.removeItem("token");
-        navigate("/login"); // 🔄 navigate instead of window.location.href
+        setIsAuthenticated(false); // ✅ Update auth state
+        navigate("/login");        // ✅ Navigate to login
       }
     } catch (error) {
       console.error("Logout failed:", error);
