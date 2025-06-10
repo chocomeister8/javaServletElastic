@@ -1,174 +1,234 @@
-import React, { useEffect, useState } from "react";
-import { Modal, Button, Form, FloatingLabel, Container, Table} from 'react-bootstrap';
-import TopNavBar from "../components/TopNavBar";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Modal, Button, Form, Table, Alert } from 'react-bootstrap';
+import TopNavbar from '../components/TopNavbar';
 
-const UserManagement = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+function UserList() {
   const [showModal, setShowModal] = useState(false);
+  const [users, setUsers] = useState([]); // To hold list of users
+  const [activeTab, setActiveTab] = useState('usermanagement');
 
-  // Form Fields
-  const [formData, setFormData] = useState({
+  
+  // User form state
+  const [user, setUser] = useState({
     name: '',
     password: '',
     email: '',
-    age: '',
     dateOfBirth: '',
-    status: "Active",
-    groups: ''
+    age: '',
+    status: 'enabled',  // fixed, uneditable
+    groups: '',
   });
 
+  // Fetch users on component mount or after user creation
   useEffect(() => {
-    fetch("http://localhost:8080/servletapp/users")
-      .then(response => response.json())
-      .then(data => {
-        setUsers(data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error("Failed to fetch users:", error);
-        setLoading(false);
-      });
+    fetchUsers();
   }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value
-    }));
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get('http://localhost:8080/api/users');
+      setUsers(res.data);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
+
+  // Calculate age from DOB
+  const calculateAge = (dob) => {
+    if (!dob) return '';
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    // Update user state
+    setUser(prev => {
+      const updatedUser = { ...prev, [name]: value };
+
+      // If DOB changed, calculate age automatically
+      if (name === 'dateOfBirth') {
+        updatedUser.age = calculateAge(value);
+      }
+
+      return updatedUser;
+    });
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const token = localStorage.getItem("token"); // or however you store it
+    try {
+      const response = await axios.post('http://localhost:8080/api/createUser', user);
 
-  const response = await fetch("http://localhost:8080/servletapp/createUser", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`, // <-- Required by your backend
-    },
-    body: JSON.stringify(formData),
-  });
+      console.log('User created:', response.data);
 
-  if (response.ok) {
-    const newUser = await response.json();
-    setUsers(prev => [...prev, newUser]);
-    setShowModal(false);
-    setFormData({
-      name: '',
-      password: '',
-      email: '',
-      age: '',
-      dateOfBirth: '',
-      status: "Active",
-      groups: ''
-    });
-  } else {
-    const errorData = await response.json();
-    alert(`Failed to create user: ${errorData.error}`);
-  }
-};
+      setShowModal(false);
+      setUser({
+        name: '',
+        password: '',
+        email: '',
+        dateOfBirth: '',
+        age: '',
+        status: 'enabled',
+        groups: '',
+      });
 
+      // Refresh user list after creation
+      fetchUsers();
 
-  if (loading) return <p>Loading users...</p>;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      alert('Failed to create user. Please try again.');
+    }
+  };
 
   return (
     <>
-      <TopNavBar />
-      <Container className="mt-4 pt-3">
-        <div className="border p-4 rounded shadow-sm">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h2>User Management</h2>
-          <Button variant="success" onClick={() => setShowModal(true)}>Create User</Button>
-        </div>
-        <Table striped bordered hover responsive>
+    <TopNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+
+    <div className="container mt-4">
+      <Button variant="primary" onClick={() => setShowModal(true)}>Create User</Button>
+
+      {/* User table */}
+      {users.length > 0 ? (
+        <Table striped bordered hover responsive className="mt-3">
           <thead>
             <tr>
               <th>Name</th>
-              <th>Password</th>
               <th>Email</th>
               <th>Age</th>
               <th>Date of Birth</th>
               <th>Status</th>
               <th>Groups</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {users.map((user, index) => (
-              <tr key={index}>
-                <td>{user.name}</td>
-                <td>{user.password}</td>
-                <td>{user.email}</td>
-                <td>{user.age}</td>
-                <td>{user.dateOfBirth}</td>
-                <td>{user.status ? "Active" : "Disabled"}</td>
-                <td>{user.groups}</td>
+            {users.map((u) => (
+              <tr key={u.email}>
+                <td>{u.name}</td>
+                <td>{u.email}</td>
+                <td>{u.age}</td>
+                <td>{u.dateOfBirth}</td>
+                <td>{u.status}</td>
+                <td>{u.groups}</td>
+                <td>
+                  <Button variant="warning" size="sm" disabled>
+                    Edit
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
         </Table>
-        </div>
-      </Container>
+      ) : (
+        <Alert variant="info" className="mt-3">
+          No data yet.
+        </Alert>
+      )}
 
-      {/* Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} scrollable={false} centered dialogClassName="no-scroll-modal">
+      {/* Create User Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Create User</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
-            <div className="d-flex gap-3 mb-3">
-              <FloatingLabel controlId="formName" label="Name" className="w-50">
-                <Form.Control type="text" name="name" value={formData.name} onChange={handleInputChange} required />
-              </FloatingLabel>
-              <FloatingLabel controlId="formPassword" label="Password" className="w-50">
-                <Form.Control type="password" name="password" value={formData.password} onChange={handleInputChange} required />
-              </FloatingLabel>
-            </div>
-            <div className="d-flex gap-3 mb-3">
-              <FloatingLabel controlId="formEmail" label="Email" className="w-50">
-                <Form.Control type="email" name="email" value={formData.email} onChange={handleInputChange} required />
-              </FloatingLabel>
-              <FloatingLabel controlId="formAge" label="Age" className="w-50">
-                <Form.Control type="number" name="age" value={formData.age} onChange={handleInputChange} required />
-              </FloatingLabel>
-            </div>
-            <div className="d-flex gap-3 mb-3">
-              <FloatingLabel controlId="formDob" label="Date of Birth" className="w-50">
-                <Form.Control type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} required />
-              </FloatingLabel>
-              <FloatingLabel controlId="formIsBanned" label="Status" className="w-50">
-                <Form.Select name="Status" value={formData.status ? "Disabled" : "Active"} onChange={(e) =>
-                  setFormData(prev => ({
-                    ...prev,
-                    isBanned: e.target.value === "Disabled"
-                  }))
-                }>
-                  <option value="Active">Active</option>
-                  <option value="Disabled">Disabled</option>
-                </Form.Select>
-              </FloatingLabel>
-            </div>
-            <FloatingLabel controlId="formGroups" label="Groups" className="mb-3">
-              <Form.Control type="text" name="groups" value={formData.groups} onChange={handleInputChange} />
-            </FloatingLabel>
 
-            <div className="d-flex justify-content-center gap-2 mt-4">
-              <Button variant="success" type="submit">
-                Create
-              </Button>
-              <Button variant="secondary" onClick={() => setShowModal(false)}>
-                Cancel
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
+        <Form onSubmit={handleSubmit}>
+          <Modal.Body>
+            <Form.Group className="mb-3" controlId="formName">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="name"
+                value={user.name}
+                onChange={handleChange}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="formPassword">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="password"
+                value={user.password}
+                onChange={handleChange}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="formEmail">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                value={user.email}
+                onChange={handleChange}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="formDOB">
+              <Form.Label>Date of Birth</Form.Label>
+              <Form.Control
+                type="date"
+                name="dateOfBirth"
+                value={user.dateOfBirth}
+                onChange={handleChange}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="formAge">
+              <Form.Label>Age</Form.Label>
+              <Form.Control
+                type="number"
+                name="age"
+                value={user.age}
+                readOnly
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="formStatus">
+              <Form.Label>Status</Form.Label>
+              <Form.Control
+                type="text"
+                name="status"
+                value={user.status}
+                readOnly
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="formGroups">
+              <Form.Label>Groups</Form.Label>
+              <Form.Control
+                type="text"
+                name="groups"
+                value={user.groups}
+                onChange={handleChange}
+              />
+            </Form.Group>
+          </Modal.Body>
+
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+            <Button type="submit" variant="primary">Create</Button>
+          </Modal.Footer>
+        </Form>
       </Modal>
+    </div>
     </>
   );
-};
+}
 
-export default UserManagement;
+export default UserList;

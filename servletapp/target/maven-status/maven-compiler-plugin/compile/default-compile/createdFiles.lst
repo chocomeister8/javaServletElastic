@@ -2,6 +2,7 @@ com\example\elasticsearch\ElasticUserIndexCreator.class
 com\example\elasticsearch\ElasticSearchClientProvider.class
 com\example\Utils\jwtUtils.class
 com\example\Controller\GetAllUsers.class
+AuthCheckServlet.class
 com\example\Controller\CreateUser.class
 com\example\Models\User.class
 com\example\Controller\LogoutServlet.class
