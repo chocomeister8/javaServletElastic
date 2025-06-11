@@ -4,11 +4,11 @@ import { Navbar, Nav, Container } from 'react-bootstrap';
 
 function TopNavbar({ activeTab, onTabChange }) {
   return (
-    <Navbar bg="dark" variant="dark" fixed="top" expand="lg">
+    <Navbar bg="dark" variant="dark" fixed="top" expand={false}>
       <Container>
-        <Nav className="me-auto" activeKey={activeTab} onSelect={(selectedKey) => onTabChange(selectedKey)}>
-          <Nav.Link eventKey="reactjavaelastic" href="#">ReactJavaElastic</Nav.Link>
-          <Nav.Link eventKey="usermanagement" href="#">UserManagement</Nav.Link>
+        <Nav className="d-flex flex-row" activeKey={activeTab} onSelect={(selectedKey) => onTabChange(selectedKey)}>
+          <Nav.Link eventKey="reactjavaelastic" href="#" className="px-3">ReactJavaElastic</Nav.Link>
+          <Nav.Link eventKey="usermanagement" href="#" className="px-3">UserManagement</Nav.Link>
         </Nav>
       </Container>
     </Navbar>

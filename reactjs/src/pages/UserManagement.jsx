@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Modal, Button, Form, Table, Alert } from 'react-bootstrap';
+import { Modal, Button, Form, Table, Alert, Card, Row, Col, FloatingLabel, Toast, ToastContainer} from 'react-bootstrap';
 import TopNavbar from '../components/TopNavbar';
 
 
@@ -8,8 +8,9 @@ function UserList() {
   const [showModal, setShowModal] = useState(false);
   const [users, setUsers] = useState([]); // To hold list of users
   const [activeTab, setActiveTab] = useState('usermanagement');
-
-  
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+    
   // User form state
   const [user, setUser] = useState({
     name: '',
@@ -28,8 +29,13 @@ function UserList() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:8080/api/users');
-      setUsers(res.data);
+      const response = await fetch('http://localhost:8080/servletapp/api/users', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const users = await response.json();
+      console.log(users);
+      setUsers(users);
     } catch (error) {
       console.error('Failed to fetch users:', error);
     }
@@ -68,9 +74,14 @@ function UserList() {
     e.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:8080/api/createUser', user);
-
-      console.log('User created:', response.data);
+      const formattedUser = {
+        ...user,
+        age: parseInt(user.age),
+      };
+      const response = await axios.post('http://localhost:8080/servletapp/api/users',formattedUser,{
+        headers: {'Content-Type': 'application/json',},withCredentials: true,}
+      );
+      await fetchUsers();
 
       setShowModal(false);
       setUser({
@@ -83,12 +94,10 @@ function UserList() {
         groups: '',
       });
 
-      // Refresh user list after creation
-      fetchUsers();
-
     } catch (error) {
-      console.error('Error creating user:', error);
-      alert('Failed to create user. Please try again.');
+      console.error('Error creating user:', error.response?.data || error.message);
+      setSnackbarMessage(error.response?.data?.error || 'Failed to create user. Please try again.');
+      setShowSnackbar(true);
     }
   };
 
@@ -97,135 +106,118 @@ function UserList() {
     <TopNavbar activeTab={activeTab} onTabChange={setActiveTab} />
 
     <div className="container mt-4">
-      <Button variant="primary" onClick={() => setShowModal(true)}>Create User</Button>
-
-      {/* User table */}
-      {users.length > 0 ? (
-        <Table striped bordered hover responsive className="mt-3">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Age</th>
-              <th>Date of Birth</th>
-              <th>Status</th>
-              <th>Groups</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.email}>
-                <td>{u.name}</td>
-                <td>{u.email}</td>
-                <td>{u.age}</td>
-                <td>{u.dateOfBirth}</td>
-                <td>{u.status}</td>
-                <td>{u.groups}</td>
-                <td>
-                  <Button variant="warning" size="sm" disabled>
-                    Edit
-                  </Button>
-                </td>
+      <Card className="mt-3 p-3">
+        <Button variant="success" onClick={() => setShowModal(true)}>Create User</Button>
+        {/* User table */}
+        {users.length > 0 ? (
+          <Table striped bordered hover responsive className="mt-3">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Age</th>
+                <th>Date of Birth</th>
+                <th>Status</th>
+                <th>Groups</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
-      ) : (
-        <Alert variant="info" className="mt-3">
-          No data yet.
-        </Alert>
-      )}
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.email}>
+                  <td>{u.name}</td>
+                  <td>{u.email}</td>
+                  <td>{u.age}</td>
+                  <td>{u.dateOfBirth}</td>
+                  <td>{u.status}</td>
+                  <td>{u.groups}</td>
+                  <td>
+                    <Button variant="secondary" size="sm" >Edit</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          <Alert variant="info" className="mt-3">
+            No data yet.
+          </Alert>
+        )}
 
-      {/* Create User Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Create User</Modal.Title>
-        </Modal.Header>
+        {/* Create User Modal */}
+        <Modal show={showModal} onHide={() => setShowModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Create User</Modal.Title>
+          </Modal.Header>
 
-        <Form onSubmit={handleSubmit}>
-          <Modal.Body>
-            <Form.Group className="mb-3" controlId="formName">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={user.name}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
+          <Form onSubmit={handleSubmit}>
+            <Modal.Body>
+              <Row className="mb-2">
+                <Col md={6}>
+                  <FloatingLabel controlId="formName" label="Name">
+                    <Form.Control type="text" name="name" value={user.name} onChange={handleChange} placeholder="Name" required/>
+                  </FloatingLabel>
+                </Col>
+                <Col md={6}>
+                  <FloatingLabel controlId="formPassword" label="Password">
+                    <Form.Control type="password" name="password" value={user.password} onChange={handleChange} placeholder="Password" required/>
+                  </FloatingLabel>
+                </Col>
+              </Row>
+              <Row className="mb-2">
+                <Col md={6}>
+                  <FloatingLabel controlId="formEmail" label="Email">
+                    <Form.Control type="email" name="email" value={user.email} onChange={handleChange} placeholder="Email" required/>
+                  </FloatingLabel>
+                </Col>
+                <Col md={6}>
+                  <FloatingLabel controlId="formDOB" label="Date of Birth">
+                    <Form.Control type="date" name="dateOfBirth" value={user.dateOfBirth} onChange={handleChange} max={new Date().toISOString().split('T')[0]} onKeyDown={(e) => e.preventDefault()} placeholder="Date of Birth" required/>
+                  </FloatingLabel>
+                </Col>
+              </Row>
 
-            <Form.Group className="mb-3" controlId="formPassword">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                name="password"
-                value={user.password}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
+              <Row className="mb-2">
+                <Col md={4}>
+                  <FloatingLabel controlId="formAge" label="Age">
+                    <Form.Control type="number" name="age" value={user.age} disabled placeholder="Age"/>
+                  </FloatingLabel>
+                </Col>
+                <Col md={4}>
+                  <FloatingLabel controlId="formStatus" label="Status">
+                    <Form.Control type="text" name="status" value={user.status} readOnly placeholder="Status"/>
+                  </FloatingLabel>
+                </Col>
+                <Col md={4}>
+                  <FloatingLabel controlId="formGroups" label="Groups">
+                    <Form.Control type="text" name="groups" value={user.groups} onChange={handleChange} placeholder="Groups"/>
+                  </FloatingLabel>
+                </Col>
+              </Row>
+              <ToastContainer className="p-0" position="bottom-center">
+                <Toast
+                  onClose={() => setShowSnackbar(false)}
+                  show={showSnackbar}
+                  delay={3000}
+                  autohide
+                  bg="danger"
+                  style={{ minWidth: '250px' }}
+                >
+                  <Toast.Header>
+                    <strong className="me-auto">Error</strong>
+                  </Toast.Header>
+                  <Toast.Body className="text-white">{snackbarMessage}</Toast.Body>
+                </Toast>
+              </ToastContainer>
+            </Modal.Body>
 
-            <Form.Group className="mb-3" controlId="formEmail">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                value={user.email}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="formDOB">
-              <Form.Label>Date of Birth</Form.Label>
-              <Form.Control
-                type="date"
-                name="dateOfBirth"
-                value={user.dateOfBirth}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="formAge">
-              <Form.Label>Age</Form.Label>
-              <Form.Control
-                type="number"
-                name="age"
-                value={user.age}
-                readOnly
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="formStatus">
-              <Form.Label>Status</Form.Label>
-              <Form.Control
-                type="text"
-                name="status"
-                value={user.status}
-                readOnly
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="formGroups">
-              <Form.Label>Groups</Form.Label>
-              <Form.Control
-                type="text"
-                name="groups"
-                value={user.groups}
-                onChange={handleChange}
-              />
-            </Form.Group>
-          </Modal.Body>
-
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button type="submit" variant="primary">Create</Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
+            <Modal.Footer className="justify-content-center">
+              <Button type="submit" variant="success">Create</Button>
+              <Button variant="danger" onClick={() => setShowModal(false)}>Cancel</Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
+      </Card>
     </div>
     </>
   );

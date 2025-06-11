@@ -1,14 +1,3 @@
-com\example\elasticsearch\ElasticUserIndexCreator.class
-com\example\elasticsearch\ElasticSearchClientProvider.class
-com\example\Utils\jwtUtils.class
-com\example\Controller\GetAllUsers.class
-AuthCheckServlet.class
-com\example\Controller\CreateUser.class
-com\example\Models\User.class
-com\example\Controller\LogoutServlet.class
 com\example\Utils\CorsFilter.class
-com\example\Controller\UserController.class
-com\example\elasticsearch\ElasticSearchConnectionTest.class
-com\example\Controller\LoginServlet.class
-com\example\elasticsearch\ElasticSearchClientProvider$ClientWrapper.class
-com\example\Controller\LoginServlet$LoginRequest.class
+com\example\controller\UserServlet.class
+com\example\models\User.class
