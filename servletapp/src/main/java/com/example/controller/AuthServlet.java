@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.example.Utils.JwtUtil;
 import com.example.models.User;
@@ -43,55 +44,74 @@ public class AuthServlet extends HttpServlet {
         client = new ElasticsearchClient(transport);
     }
     
-
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // Parse JSON body
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = req.getReader().readLine()) != null) {
-            sb.append(line);
-        }
+        resp.setContentType("application/json");
 
-        String body = sb.toString();
-        org.json.JSONObject json = new org.json.JSONObject(body);
-        String name = json.getString("name");
-        String password = json.getString("password");
+        try {
+            // Read JSON body from request
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = req.getReader().readLine()) != null) {
+                sb.append(line);
+            }
+            String body = sb.toString();
+            System.out.println("📩 Received payload: " + body); // 👈 Add this line
 
-        // Create a query to find user with matching name AND password
-        BoolQuery boolQuery = new BoolQuery.Builder()
-            .must(MatchQuery.of(m -> m.field("name").query(name))._toQuery())
-            .must(MatchQuery.of(m -> m.field("password").query(password))._toQuery())
-            .build();
+            // Parse JSON
+            org.json.JSONObject json = new org.json.JSONObject(body);
+            String name = json.getString("name");
+            String password = json.getString("password");
 
-        SearchRequest searchRequest = new SearchRequest.Builder()
-            .index("users")
-            .query(q -> q.bool(boolQuery))
-            .build();
+            // Query Elasticsearch by username only
+            SearchRequest searchRequest = new SearchRequest.Builder()
+                .index("users")
+                .query(q -> q.term(t -> t
+                    .field("name")
+                    .value(name)
+                ))
+                .build();
 
-        SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
-        List<Hit<User>> hits = searchResponse.hits().hits();
+            SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
+            List<Hit<User>> hits = searchResponse.hits().hits();
 
-        if (!hits.isEmpty()) {
-            User user = hits.get(0).source();
+            System.out.println("🔎 Searching for name: " + name);
+            System.out.println("📊 Total hits found: " + hits.size());
 
-            // Generate JWT
-            String jwt = JwtUtil.generateToken(user.getName());
+            if (!hits.isEmpty()) {
+                User user = hits.get(0).source();
+                String hashedPassword = user.getPassword();
 
-            // Set cookie
-            Cookie tokenCookie = new Cookie("token", jwt);
-            tokenCookie.setHttpOnly(true);
-            tokenCookie.setPath("/");
-            tokenCookie.setMaxAge(3600);
-            resp.addCookie(tokenCookie);
+                System.out.println("🔍 Raw password entered: " + password);
+                System.out.println("🔍 Hashed password from ES: " + hashedPassword);
 
-            resp.setStatus(HttpServletResponse.SC_OK);
-        } else {
+                BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
+                // Verify raw password with hashed password
+                if (encoder.matches(password, hashedPassword)) {
+                    // Password matches - generate JWT and set cookie
+                    String jwt = JwtUtil.generateToken(user.getName());
+
+                    Cookie tokenCookie = new Cookie("token", jwt);
+                    tokenCookie.setHttpOnly(true);
+                    tokenCookie.setPath("/");
+                    tokenCookie.setMaxAge(3600); // 1 hour
+                    resp.addCookie(tokenCookie);
+
+                    resp.setStatus(HttpServletResponse.SC_OK);
+                    resp.getWriter().write("{\"message\":\"Login successful\"}");
+                    return;
+                }
+            }
+
+            // Invalid credentials
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            resp.setContentType("application/json");
-            PrintWriter out = resp.getWriter();
-            out.print("{\"message\":\"Invalid username or password\"}");
-            out.flush();
+            resp.getWriter().write("{\"message\":\"Invalid username or password\"}");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("{\"message\":\"Server error.\"}");
         }
     }
 

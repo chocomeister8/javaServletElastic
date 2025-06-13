@@ -26,6 +26,8 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import co.elastic.clients.elasticsearch._types.Refresh;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 
 
 import jakarta.servlet.ServletException;
@@ -74,6 +76,10 @@ public class UserServlet extends HttpServlet {
             return;
         }
 
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        String hashedPassword = encoder.encode(user.getPassword());
+        user.setPassword(hashedPassword);
+
         if (!user.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write("{\"error\": \"Invalid email format.\"}");
@@ -87,7 +93,7 @@ public class UserServlet extends HttpServlet {
         }
 
         // Optional: Check for null in required fields
-        if (user.getName() == null || user.getPassword() == null || user.getEmail() == null || user.getAge() == null || user.getDateOfBirth() == null || user.getStatus() == null) {
+        if (user.getName() == null || user.getPassword() == null || user.getEmail() == null || user.getDateOfBirth() == null || user.getStatus() == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write("{\"error\": \"Missing required fields.\"}");
             return;

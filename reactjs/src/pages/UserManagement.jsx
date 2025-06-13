@@ -20,7 +20,6 @@ function UserList() {
     password: '',
     email: '',
     dateOfBirth: '',
-    age: '',
     status: 'enabled',  // fixed, uneditable
     groups: '',
   });
@@ -44,18 +43,6 @@ function UserList() {
     }
   };
 
-  // Calculate age from DOB
-  const calculateAge = (dob) => {
-    if (!dob) return '';
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,11 +50,6 @@ function UserList() {
     // Update user state
     setUser(prev => {
       const updatedUser = { ...prev, [name]: value };
-
-      // If DOB changed, calculate age automatically
-      if (name === 'dateOfBirth') {
-        updatedUser.age = calculateAge(value);
-      }
 
       return updatedUser;
     });
@@ -79,7 +61,14 @@ function UserList() {
     try {
       const formattedUser = {
         ...user,
-        age: parseInt(user.age),
+        // Remove age, calculate on backend
+        // Optionally trim fields if needed
+        name: user.name.trim(),
+        password: user.password,
+        email: user.email.trim(),
+        dateOfBirth: user.dateOfBirth,
+        status: user.status || 'enabled',
+        groups: user.groups,
       };
       console.log('Submitting user:', user);
       const response = await axios.post('http://localhost:8080/servletapp/api/users',formattedUser,{headers: {'Content-Type': 'application/json',},withCredentials: true,});
@@ -93,7 +82,6 @@ function UserList() {
         password: '',
         email: '',
         dateOfBirth: '',
-        age: '',
         status: 'enabled',
         groups: '',
       });
@@ -120,7 +108,6 @@ function UserList() {
               <tr>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Age</th>
                 <th>Date of Birth</th>
                 <th>Status</th>
                 <th>Groups</th>
@@ -132,7 +119,6 @@ function UserList() {
                 <tr key={u.email}>
                   <td>{u.name}</td>
                   <td>{u.email}</td>
-                  <td>{u.age}</td>
                   <td>{u.dateOfBirth}</td>
                   <td>{u.status}</td>
                   <td>{u.groups}</td>
@@ -198,19 +184,19 @@ function UserList() {
               </Row>
 
               <Row className="mb-2">
-                <Col md={4}>
-                  <FloatingLabel controlId="formAge" label="Age">
-                    <Form.Control type="number" name="age" value={user.age} disabled placeholder="Age"/>
-                  </FloatingLabel>
-                </Col>
-                <Col md={4}>
+                <Col md={6}>
                   <FloatingLabel controlId="formStatus" label="Status">
                     <Form.Control type="text" name="status" value={user.status} readOnly placeholder="Status"/>
                   </FloatingLabel>
                 </Col>
-                <Col md={4}>
+                <Col md={6}>
                   <FloatingLabel controlId="formGroups" label="Groups">
-                    <Form.Control type="text" name="groups" value={user.groups} onChange={handleChange} placeholder="Groups"/>
+                    <Form.Select name="groups" value={user.groups} onChange={handleChange} aria-label="Select group">
+                      <option value="">Select group</option>
+                      <option value="user">User</option>
+                      <option value="moderator">Moderator</option>
+                      <option value="admin">Admin</option>
+                    </Form.Select>
                   </FloatingLabel>
                 </Col>
               </Row>
