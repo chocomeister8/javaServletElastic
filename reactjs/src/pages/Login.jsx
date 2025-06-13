@@ -1,30 +1,27 @@
 import { useState } from 'react';
 import { Form, Button, Card, Alert, FloatingLabel } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+
 
 function LoginPage({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
     try {
-        const response = await fetch('http://localhost:8080/servletapp/api/auth', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            name: username,
-            password: password,
-        }),
-        credentials: 'include', // important to send/receive cookies
+        const response = await fetch('http://localhost:8080/servletapp/api/auth', {method: 'POST',
+          headers: {'Content-Type': 'application/json',},
+          body: JSON.stringify({name: username,password: password,}),credentials: 'include', // important to send/receive cookies
         });
 
         if (response.ok) {
-        onLogin(); // set authenticated state
+          onLogin(); // set authenticated state
+          navigate('/users');
         } else {
         const data = await response.json();
         setError(data.message || 'Invalid credentials');
@@ -32,7 +29,7 @@ function LoginPage({ onLogin }) {
     } catch (err) {
         setError('Login failed. Please try again later.');
     }
-};
+  };  
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
