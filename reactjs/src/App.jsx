@@ -1,4 +1,5 @@
 import './App.css';
+import LoginPage from './pages/Login';
 import UserManagement from './pages/UserManagement';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useState, useEffect } from 'react';
@@ -12,8 +13,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/"/>
-          <Route path="/users" element={<UserManagement />} />
+        {/* Login Route */}
+        <Route path="/login" element={<LoginPage onLogin={() => setIsAuthenticated(true)} />} />
+        {/* Protected Users Route */}
+        <Route path="/users" element={isAuthenticated ? (<UserManagement />) : (<Navigate to="/login" replace />)}/>
+        {/* Default Route */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

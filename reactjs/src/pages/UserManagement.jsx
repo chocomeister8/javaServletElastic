@@ -10,6 +10,9 @@ function UserList() {
   const [activeTab, setActiveTab] = useState('usermanagement');
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
     
   // User form state
   const [user, setUser] = useState({
@@ -27,17 +30,17 @@ function UserList() {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1) => {
+    console.log('fetchUsers called with page:', page);
     try {
-      const response = await fetch('http://localhost:8080/servletapp/api/users', {
-        method: 'GET',
-        credentials: 'include',
-      });
-      const users = await response.json();
-      console.log(users);
-      setUsers(users);
+      const response = await axios.get(`http://localhost:8080/servletapp/api/users?page=${page}&size=8`);
+      console.log('Fetched users:', response.data.users.length);
+      setUsers(response.data.users);
+      console.log('Users updated:', response.data.users);
+      setTotalPages(response.data.totalPages);
+      setCurrentPage(page); // 👈 Add this line
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      console.error('Error fetching users:', error);
     }
   };
 
@@ -78,10 +81,11 @@ function UserList() {
         ...user,
         age: parseInt(user.age),
       };
-      const response = await axios.post('http://localhost:8080/servletapp/api/users',formattedUser,{
-        headers: {'Content-Type': 'application/json',},withCredentials: true,}
-      );
-      await fetchUsers();
+      console.log('Submitting user:', user);
+      const response = await axios.post('http://localhost:8080/servletapp/api/users',formattedUser,{headers: {'Content-Type': 'application/json',},withCredentials: true,});
+      console.log('User created:', response.data);
+      console.log('Fetching users after creation');
+      await fetchUsers(currentPage);
 
       setShowModal(false);
       setUser({
@@ -109,7 +113,8 @@ function UserList() {
       <Card className="mt-3 p-3">
         <Button variant="success" onClick={() => setShowModal(true)}>Create User</Button>
         {/* User table */}
-        {users.length > 0 ? (
+        {users && users.length > 0 ? (
+          <>
           <Table striped bordered hover responsive className="mt-3">
             <thead>
               <tr>
@@ -138,6 +143,21 @@ function UserList() {
               ))}
             </tbody>
           </Table>
+          {totalPages > 1 && (
+            <div className="d-flex justify-content-center my-3">
+              {Array.from({ length: totalPages }, (_, index) => (
+                <Button
+                  key={index + 1}
+                  onClick={() => fetchUsers(index + 1)}
+                  variant={currentPage === index + 1 ? "secondary" : "outline-secondary"}
+                  className="mx-1"
+                >
+                  {index + 1}
+                </Button>
+              ))}
+            </div>
+          )}
+          </>
         ) : (
           <Alert variant="info" className="mt-3">
             No data yet.

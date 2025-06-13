@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.example.models.User;
@@ -14,12 +16,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHost;// Correct HttpHost for ES RestClient
 import org.elasticsearch.client.RestClient;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
+import co.elastic.clients.elasticsearch._types.Refresh;
+
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -86,13 +93,13 @@ public class UserServlet extends HttpServlet {
             return;
         }
 
-        // 🔍 Check if the email already exists
+        // 🔍 Check if the name already exists
         SearchRequest searchRequest = SearchRequest.of(s -> s
             .index("users")
             .query(q -> q
                 .term(t -> t
-                    .field("email.keyword")
-                    .value(user.getEmail())
+                    .field("name.keyword")
+                    .value(user.getName())
                 )
             )
         );
@@ -101,7 +108,7 @@ public class UserServlet extends HttpServlet {
 
         if (!searchResponse.hits().hits().isEmpty()) {
             resp.setStatus(HttpServletResponse.SC_CONFLICT); // 409 Conflict
-            resp.getWriter().write("{\"error\": \"Email already exists.\"}");
+            resp.getWriter().write("{\"error\": \"Name already exists.\"}");
             return;
         }
 
@@ -109,16 +116,22 @@ public class UserServlet extends HttpServlet {
         IndexRequest<User> request = IndexRequest.of(i -> i
             .index("users")
             .document(user)
+            .refresh(Refresh.True)
         );
 
-        client.index(request);
+        System.out.println("Indexing user to Elasticsearch...");
+        IndexResponse response = client.index(request);
+        System.out.println("Index response: " + response.result());
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.getWriter().write("{\"message\": \"User created successfully\"}");
         }
 
         catch (Exception e) {
-            e.printStackTrace(); // Logs full error to console
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server error: " + e.getMessage());
+            System.out.println("❌ Error indexing user: " + e.getMessage());
+            e.printStackTrace();
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("{\"error\": \"Failed to index user.\"}");
+            return;
         }
     }
 
@@ -133,17 +146,38 @@ public class UserServlet extends HttpServlet {
     
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        try {
+            int page = Integer.parseInt(req.getParameter("page"));
+            int size = Integer.parseInt(req.getParameter("size"));
+            int from = (page - 1) * size;
 
-        // Sample query: return 10 users from index "users"
-        SearchResponse<User> searchResponse = client.search(s -> s
-            .index("users")
-            .size(10), User.class);
+            SearchRequest searchRequest = SearchRequest.of(s -> s
+                .index("users")
+                .from(from)
+                .size(size)
+            );
 
-        List<User> users = searchResponse.hits().hits().stream()
-            .map(hit -> hit.source())
-            .collect(Collectors.toList());
+            SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
 
-        String json = mapper.writeValueAsString(users);
-        resp.getWriter().write(json);
+            List<User> users = searchResponse.hits().hits().stream()
+                .map(Hit::source)
+                .collect(Collectors.toList());
+
+            // Get total count for pagination
+            long totalHits = searchResponse.hits().total().value();
+            int totalPages = (int) Math.ceil((double) totalHits / size);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("users", users);
+            result.put("totalPages", totalPages);
+
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
+            resp.getWriter().write(new ObjectMapper().writeValueAsString(result));
+        } catch (Exception e) {
+            e.printStackTrace();
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error fetching users.");
+        }
     }
+
 }
