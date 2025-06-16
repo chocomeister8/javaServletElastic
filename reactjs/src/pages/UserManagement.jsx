@@ -11,6 +11,11 @@ function UserList() {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
+  const [editIndex, setEditIndex] = useState(null); // Index of the row being edited
+  const [editedUser, setEditedUser] = useState({}); // Store edited values
+  const [editError, setEditError] = useState('');
+
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
     
@@ -43,7 +48,6 @@ function UserList() {
     }
   };
 
-
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -55,14 +59,13 @@ function UserList() {
     });
   };
 
+  // add user data
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const formattedUser = {
         ...user,
-        // Remove age, calculate on backend
-        // Optionally trim fields if needed
         name: user.name.trim(),
         password: user.password,
         email: user.email.trim(),
@@ -93,6 +96,53 @@ function UserList() {
     }
   };
 
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditedUser(prev => ({ ...prev, [name]: value }));
+  };
+
+  const startEdit = (index) => {
+    setEditIndex(index);
+    setEditedUser(users[index]);
+  };
+
+  const cancelEdit = () => {
+    setEditIndex(null);
+    setEditedUser({});
+    setEditError('');
+  };
+
+  // update user data
+  const handleSaveEdit = async (index) => {
+    try {
+      const updatedUser = {
+        ...editedUser,
+        name: editedUser.name.trim(),
+        password: editedUser.password.trim(),
+        email: editedUser.email.trim(),
+        dateOfBirth: editedUser.dateOfBirth,
+        status: editedUser.status.trim(),
+        groups: editedUser.groups.trim(),
+      };
+
+      console.log("Sending updated user:", updatedUser);
+      const response = await axios.put(`http://localhost:8080/servletapp/api/users`, updatedUser, {headers: { 'Content-Type': 'application/json' }, withCredentials: true,});
+      console.log('User updated:', response.data);
+      
+      const updatedUsers = [...users];
+      updatedUsers[index] = updatedUser;
+      setUsers(updatedUsers);
+
+      setEditIndex(null);
+      setEditedUser({});
+      setEditError('');
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to update user.';
+      console.error('Error updating user:', message);
+      setEditError(message);
+    }
+  };
+
   return (
     <>
     <TopNavbar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -100,6 +150,12 @@ function UserList() {
     <div className="container mt-4">
       <Card className="mt-3 p-3">
         <Button variant="success" onClick={() => setShowModal(true)}>Create User</Button>
+        {/* Show edit error message below the Create button */}
+        {editError && (
+          <Alert variant="danger" className="mt-3">
+            {editError}
+          </Alert>
+        )}
         {/* User table */}
         {users && users.length > 0 ? (
           <>
@@ -107,6 +163,7 @@ function UserList() {
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Password</th>
                 <th>Email</th>
                 <th>Date of Birth</th>
                 <th>Status</th>
@@ -115,16 +172,51 @@ function UserList() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.email}>
-                  <td>{u.name}</td>
-                  <td>{u.email}</td>
-                  <td>{u.dateOfBirth}</td>
-                  <td>{u.status}</td>
-                  <td>{u.groups}</td>
-                  <td>
-                    <Button variant="secondary" size="sm" >Edit</Button>
-                  </td>
+              {users.map((u, index) => (
+                <tr key={u.name}>
+                  {editIndex === index ? (
+                    <>
+                      <td><Form.Control type="text" name="name" value={editedUser.name} onChange={handleEditChange} disabled /></td>
+                      <td><Form.Control type="password" name="password" value={editedUser.password} onChange={handleEditChange} /></td>
+                      <td><Form.Control type="email" name="email" value={editedUser.email} onChange={handleEditChange} /></td>
+                      <td><Form.Control type="date" name="dateOfBirth" value={editedUser.dateOfBirth} onChange={handleEditChange} /></td>
+                      <td>
+                        <Form.Select name="status" value={editedUser.status} onChange={handleEditChange}>
+                          <option value="enabled">enabled</option>
+                          <option value="disabled">disabled</option>
+                        </Form.Select>
+                      </td>
+                      <td>
+                        <Form.Select name="groups" value={editedUser.groups} onChange={handleEditChange}>
+                          <option value="user">User</option>
+                          <option value="moderator">Moderator</option>
+                          <option value="admin">Admin</option>
+                        </Form.Select>
+                      </td>
+                      <td>
+                        <div className="d-flex gap-2">
+                          <Button variant="success" size="sm" onClick={() => handleSaveEdit(index)}>
+                            Save
+                          </Button>
+                          <Button variant="secondary" size="sm" onClick={() => cancelEdit()}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td>{u.name}</td>
+                      <td>{'********'}</td>
+                      <td>{u.email}</td>
+                      <td>{u.dateOfBirth}</td>
+                      <td>{u.status}</td>
+                      <td>{u.groups}</td>
+                      <td>
+                        <Button variant="secondary" size="sm" onClick={() => startEdit(index)}>Edit</Button>
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>

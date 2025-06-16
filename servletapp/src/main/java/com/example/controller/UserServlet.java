@@ -63,74 +63,73 @@ public class UserServlet extends HttpServlet {
             // Read user from the captured JSON string
             User user = mapper.readValue(json, User.class);
 
-        // Validate fields
-        if (!user.getName().matches("^[a-z ]+$")) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\": \"Name must contain only lowercase alphabets and spaces.\"}");
-            return;
-        }
+            // Validate fields
+            if (user.getName() == null || user.getPassword() == null || user.getEmail() == null || user.getDateOfBirth() == null || user.getStatus() == null) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\": \"Missing required fields.\"}");
+                return;
+            }
 
-        if (!user.getPassword().matches("^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,12}$")) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\": \"Password must be 8-12 characters and include at least one special character.\"}");
-            return;
-        }
+            if (!user.getName().matches("^[a-z\\- ]+$")) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\": \"Name must contain only lowercase letters, spaces, and hyphens.\"}");
+                return;
+            }
 
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        String hashedPassword = encoder.encode(user.getPassword());
-        user.setPassword(hashedPassword);
+            if (!user.getPassword().matches("^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,12}$")) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\": \"Password must be 8-12 characters and include at least one special character.\"}");
+                return;
+            }
 
-        if (!user.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\": \"Invalid email format.\"}");
-            return;
-        }
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            String hashedPassword = encoder.encode(user.getPassword());
+            user.setPassword(hashedPassword);
 
-        if (!isAtLeast18YearsOld(user.getDateOfBirth())) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\": \"User must be at least 18 years old.\"}");
-            return;
-        }
+            if (!user.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\": \"Invalid email format.\"}");
+                return;
+            }
 
-        // Optional: Check for null in required fields
-        if (user.getName() == null || user.getPassword() == null || user.getEmail() == null || user.getDateOfBirth() == null || user.getStatus() == null) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\": \"Missing required fields.\"}");
-            return;
-        }
+            if (!isAtLeast18YearsOld(user.getDateOfBirth())) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\": \"User must be at least 18 years old.\"}");
+                return;
+            }
 
-        // 🔍 Check if the name already exists
-        SearchRequest searchRequest = SearchRequest.of(s -> s
-            .index("users")
-            .query(q -> q
-                .term(t -> t
-                    .field("name.keyword")
-                    .value(user.getName())
+            // 🔍 Check if the name already exists
+            SearchRequest searchRequest = SearchRequest.of(s -> s
+                .index("users")
+                .query(q -> q
+                    .term(t -> t
+                        .field("name")
+                        .value(user.getName())
+                    )
                 )
-            )
-        );
+            );
 
-        SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
+            SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
 
-        if (!searchResponse.hits().hits().isEmpty()) {
-            resp.setStatus(HttpServletResponse.SC_CONFLICT); // 409 Conflict
-            resp.getWriter().write("{\"error\": \"Name already exists.\"}");
-            return;
-        }
+            if (!searchResponse.hits().hits().isEmpty()) {
+                resp.setStatus(HttpServletResponse.SC_CONFLICT); // 409 Conflict
+                resp.getWriter().write("{\"error\": \"Name already exists.\"}");
+                return;
+            }
 
-        // Proceed to index
-        IndexRequest<User> request = IndexRequest.of(i -> i
-            .index("users")
-            .document(user)
-            .refresh(Refresh.True)
-        );
+            // Proceed to index
+            IndexRequest<User> request = IndexRequest.of(i -> i
+                .index("users")
+                .document(user)
+                .refresh(Refresh.True)
+            );
 
-        System.out.println("Indexing user to Elasticsearch...");
-        IndexResponse response = client.index(request);
-        System.out.println("Index response: " + response.result());
-        resp.setStatus(HttpServletResponse.SC_OK);
-        resp.getWriter().write("{\"message\": \"User created successfully\"}");
-        }
+            System.out.println("Indexing user to Elasticsearch...");
+            IndexResponse response = client.index(request);
+            System.out.println("Index response: " + response.result());
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.getWriter().write("{\"message\": \"User created successfully\"}");
+            }
 
         catch (Exception e) {
             System.out.println("❌ Error indexing user: " + e.getMessage());
@@ -186,4 +185,97 @@ public class UserServlet extends HttpServlet {
         }
     }
 
+    @Override
+    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        try {
+            // Read request body
+            BufferedReader reader = request.getReader();
+            String requestBody = reader.lines().collect(Collectors.joining());
+            reader.close();
+
+            // Parse JSON to User
+            User updatedUser = mapper.readValue(requestBody, User.class);
+
+            // Validate fields
+            if (updatedUser.getName() == null || updatedUser.getPassword() == null || updatedUser.getEmail() == null || updatedUser.getDateOfBirth() == null || updatedUser.getStatus() == null) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("{\"error\": \"Missing required fields.\"}");
+                return;
+            }
+
+            if (!updatedUser.getName().matches("^[a-z\\- ]+$")) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("{\"error\": \"Name must contain only lowercase letters, spaces, and hyphens.\"}");
+                return;
+            }
+
+            if (!updatedUser.getPassword().matches("^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,12}$")) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("{\"error\": \"Password must be 8-12 characters and include at least one special character.\"}");
+                return;
+            }
+
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            if (updatedUser.getPassword() != null && !updatedUser.getPassword().startsWith("$2a$")) { // Not already hashed
+                String hashedPassword = encoder.encode(updatedUser.getPassword());
+                updatedUser.setPassword(hashedPassword);
+            }
+
+            if (!isAtLeast18YearsOld(updatedUser.getDateOfBirth())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("{\"error\": \"User must be at least 18 years old.\"}");
+                return;
+            }
+
+            if (!updatedUser.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("{\"error\": \"Invalid email format.\"}");
+                return;
+            }
+
+            // Check if the user exists
+            SearchRequest searchRequest = SearchRequest.of(s -> s
+                .index("users")
+                .query(q -> q
+                    .term(t -> t
+                        .field("name")
+                        .value(updatedUser.getName())
+                    )
+                )
+            );
+            SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
+
+            System.out.println("Matched hits: " + searchResponse.hits().hits().size());
+            searchResponse.hits().hits().forEach(hit -> System.out.println("Found doc ID: " + hit.id()));
+
+            if (searchResponse.hits().hits().isEmpty()) {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                response.getWriter().write("{\"error\": \"User not found.\"}");
+                return;
+            }
+
+            String docId = searchResponse.hits().hits().get(0).id(); // get ES doc ID
+
+            // Reindex user (overwrite the document)
+            IndexRequest<User> indexRequest = IndexRequest.of(i -> i
+                .index("users")
+                .id(docId)
+                .document(updatedUser)
+                .refresh(Refresh.True)
+            );
+
+            client.index(indexRequest);
+
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().write("{\"message\": \"User updated successfully.\"}");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getWriter().write("{\"error\": \"Failed to update user.\"}");
+        }
+    }
 }

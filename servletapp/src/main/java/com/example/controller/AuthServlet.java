@@ -52,11 +52,8 @@ public class AuthServlet extends HttpServlet {
             // Read JSON body from request
             StringBuilder sb = new StringBuilder();
             String line;
-            while ((line = req.getReader().readLine()) != null) {
-                sb.append(line);
-            }
+            while ((line = req.getReader().readLine()) != null) {sb.append(line);}
             String body = sb.toString();
-            System.out.println("📩 Received payload: " + body); // 👈 Add this line
 
             // Parse JSON
             org.json.JSONObject json = new org.json.JSONObject(body);
@@ -75,15 +72,9 @@ public class AuthServlet extends HttpServlet {
             SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
             List<Hit<User>> hits = searchResponse.hits().hits();
 
-            System.out.println("🔎 Searching for name: " + name);
-            System.out.println("📊 Total hits found: " + hits.size());
-
             if (!hits.isEmpty()) {
                 User user = hits.get(0).source();
                 String hashedPassword = user.getPassword();
-
-                System.out.println("🔍 Raw password entered: " + password);
-                System.out.println("🔍 Hashed password from ES: " + hashedPassword);
 
                 BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 

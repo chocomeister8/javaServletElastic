@@ -4,9 +4,11 @@ import { useState, useEffect} from 'react';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
-function TopNavbar({ activeTab, onTabChange, onLogout }) {
+function TopNavbar({ activeTab, onTabChange}) {
   const [userName, setUserName] = useState('');
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
 
   useEffect(() => {
     async function fetchUserName() {
@@ -16,11 +18,16 @@ function TopNavbar({ activeTab, onTabChange, onLogout }) {
           credentials: 'include'
         });
         if (!response.ok) {
+          setIsAuthenticated(false);
           throw new Error('Failed to fetch user info');
+
         }
         const data = await response.json(); // <-- Make sure this line exists!
         setUserName(data.name); // save to state
+        setIsAuthenticated(true);
+
       } catch (error) {
+        setIsAuthenticated(false);
         console.error('Error fetching user info:', error);
       }
     }
