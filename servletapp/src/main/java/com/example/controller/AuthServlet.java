@@ -15,8 +15,6 @@ import com.example.models.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -97,7 +95,7 @@ public class AuthServlet extends HttpServlet {
 
             // Invalid credentials
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            resp.getWriter().write("{\"message\":\"Invalid username or password\"}");
+            resp.getWriter().write("{\"message\":\"Invalid login\"}");
 
         } catch (Exception e) {
             e.printStackTrace();

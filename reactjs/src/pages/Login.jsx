@@ -16,16 +16,31 @@ function LoginPage({ onLogin }) {
     try {
         const response = await fetch('http://localhost:8080/servletapp/api/auth', {method: 'POST',
           headers: {'Content-Type': 'application/json',},
-          body: JSON.stringify({name: username,password: password,}),credentials: 'include', // important to send/receive cookies
+          body: JSON.stringify({name: username,password: password,}), credentials: 'include', // important to send/receive cookies
         });
 
-        if (response.ok) {
-          onLogin(); // set authenticated state
-          navigate('/users');
-        } else {
-        const data = await response.json();
-        setError(data.message || 'Invalid credentials');
+        if (!response.ok) {
+          const data = await response.json();
+          setError(data.message || 'Invalid credentials');
+          return;
         }
+
+        // Step 2: check user info (including status)
+        const userInfoResponse = await fetch('http://localhost:8080/servletapp/api/user-info', {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (!userInfoResponse.ok) {
+          const data = await userInfoResponse.json();
+          setError(data.message || 'Unable to verify account status');
+          return;
+        }
+
+        const userData = await userInfoResponse.json();
+
+        onLogin(); // Mark user as logged in in frontend state
+        navigate('/users');
     } catch (err) {
         setError('Login failed. Please try again later.');
     }

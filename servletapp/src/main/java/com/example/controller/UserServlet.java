@@ -212,7 +212,8 @@ public class UserServlet extends HttpServlet {
                 return;
             }
 
-            if (!updatedUser.getPassword().matches("^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,12}$")) {
+            if (!updatedUser.getPassword().startsWith("$2a$") && 
+                !updatedUser.getPassword().matches("^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,12}$")) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 response.getWriter().write("{\"error\": \"Password must be 8-12 characters and include at least one special character.\"}");
                 return;
