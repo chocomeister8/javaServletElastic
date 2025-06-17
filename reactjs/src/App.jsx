@@ -1,5 +1,6 @@
 import './App.css';
 import LoginPage from './pages/Login';
+import Homepage from './pages/Homepage';
 import UserManagement from './pages/UserManagement';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ProtectedRoutes from './components/ProtectedRoutes';
@@ -20,6 +21,12 @@ function App() {
         <Route path="/users" element={
             <ProtectedRoutes>
               <UserManagement />
+            </ProtectedRoutes>
+          }/>
+        {/* Protected Route */}
+        <Route path="/home" element={
+            <ProtectedRoutes>
+              <Homepage/>
             </ProtectedRoutes>
           }/>
         {/* Default Route */}

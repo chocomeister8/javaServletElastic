@@ -49,10 +49,26 @@ function TopNavbar({ activeTab, onTabChange}) {
     }
   };
 
+  // Handle navigation when clicking nav links
+  const handleSelect = (selectedKey) => {
+    if (onTabChange) onTabChange(selectedKey);
+
+    switch (selectedKey) {
+      case 'reactjavaelastic':
+        navigate('/home'); // or your homepage route
+        break;
+      case 'usermanagement':
+        navigate('/users'); // your user management route
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <Navbar bg="dark" variant="dark" fixed="top" expand={false}>
       <Container>
-        <Nav className="d-flex flex-row" activeKey={activeTab} onSelect={(selectedKey) => onTabChange(selectedKey)}>
+        <Nav className="d-flex flex-row" activeKey={activeTab} onSelect={(handleSelect)}>
           <Nav.Link eventKey="reactjavaelastic" href="#" className="px-3">ReactJavaElastic</Nav.Link>
           <Nav.Link eventKey="usermanagement" href="#" className="px-3">UserManagement</Nav.Link>
         </Nav>

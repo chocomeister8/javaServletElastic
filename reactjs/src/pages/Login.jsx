@@ -40,7 +40,7 @@ function LoginPage({ onLogin }) {
         const userData = await userInfoResponse.json();
 
         onLogin(); // Mark user as logged in in frontend state
-        navigate('/users');
+        navigate('/home');
     } catch (err) {
         setError('Login failed. Please try again later.');
     }

@@ -4,7 +4,7 @@ import { Modal, Button, Form, Table, Alert, Card, Row, Col, FloatingLabel, Toast
 import TopNavbar from '../components/TopNavbar';
 
 
-function UserList() {
+function UserManagement() {
   const [showModal, setShowModal] = useState(false);
   const [users, setUsers] = useState([]); // To hold list of users
   const [activeTab, setActiveTab] = useState('usermanagement');
@@ -321,4 +321,4 @@ function UserList() {
   );
 }
 
-export default UserList;
+export default UserManagement;
