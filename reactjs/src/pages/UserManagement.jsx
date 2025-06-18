@@ -10,11 +10,12 @@ function UserManagement() {
   const [activeTab, setActiveTab] = useState('usermanagement');
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [createSuccess, setCreateSuccess] = useState('');
 
   const [editIndex, setEditIndex] = useState(null); // Index of the row being edited
   const [editedUser, setEditedUser] = useState({}); // Store edited values
   const [editError, setEditError] = useState('');
-
+  const [editSuccess, setEditSuccess] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -37,7 +38,7 @@ function UserManagement() {
   const fetchUsers = async (page = 1) => {
     console.log('fetchUsers called with page:', page);
     try {
-      const response = await axios.get(`http://localhost:8080/servletapp/api/users?page=${page}&size=8`);
+      const response = await axios.get(`http://localhost:8080/servletapp/api/users?page=${page}&size=5`);
       console.log('Fetched users:', response.data.users.length);
       setUsers(response.data.users);
       console.log('Users updated:', response.data.users);
@@ -78,6 +79,7 @@ function UserManagement() {
       console.log('User created:', response.data);
       console.log('Fetching users after creation');
       await fetchUsers(currentPage);
+      setCreateSuccess(response.data.message);
 
       setShowModal(false);
       setUser({
@@ -125,13 +127,13 @@ function UserManagement() {
         groups: editedUser.groups.trim(),
       };
 
-      console.log("Sending updated user:", updatedUser);
       const response = await axios.put(`http://localhost:8080/servletapp/api/users`, updatedUser, {headers: { 'Content-Type': 'application/json' }, withCredentials: true,});
       console.log('User updated:', response.data);
       
       const updatedUsers = [...users];
       updatedUsers[index] = updatedUser;
       setUsers(updatedUsers);
+      setEditSuccess(response.data.message);
 
       setEditIndex(null);
       setEditedUser({});
@@ -143,19 +145,84 @@ function UserManagement() {
     }
   };
 
+  // success and error message timers
+  useEffect(() => {
+    let timer;
+
+    if (createSuccess) {
+      timer = setTimeout(() => {
+        setCreateSuccess(null); // Clear success message after delay
+      }, 3000); // 3 secs
+    }
+
+    return () => clearTimeout(timer);
+  }, [createSuccess]);
+
+  useEffect(() => {
+    let timer;
+
+    if (editError) {
+      timer = setTimeout(() => {
+        setEditError(null); // Clear error message after delay
+      }, 3000);
+    }
+
+    return () => clearTimeout(timer); // Cleanup on unmount or when editError changes
+  }, [editError]);
+
+  useEffect(() => {
+    let timer;
+
+    if (editSuccess) {
+      timer = setTimeout(() => {
+        setEditSuccess(null); // Clear success message after delay
+      }, 3000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [editSuccess]);
+
   return (
     <>
     <TopNavbar activeTab={activeTab} onTabChange={setActiveTab} />
 
-    <div className="container mt-4">
+    <div className="container mt-5">
       <Card className="mt-3 p-3">
-        <Button variant="success" onClick={() => setShowModal(true)}>Create User</Button>
-        {/* Show edit error message below the Create button */}
+        <div className="mb-3">
+          <h2>User Management Page</h2>
+        </div>
+        <Row className="align-items-center">
+          <Col md={8} className="mb-1">
+            <Form.Control style={{ minWidth: '100%' }} type="text" placeholder="Search by name" onChange={(e) => handleSearch(e.target.value)}/>
+          </Col>
+          <Col md={2} className="mb-1">
+            <Button style={{ minWidth: '100%' }} variant="secondary" onClick={() => handleSearchButtonClick()}>Search</Button>
+          </Col>
+          <Col md={2} className="mb-1">
+            <Button style={{ minWidth: '100%' }} variant="success" onClick={() => setShowModal(true)}>Create User</Button>
+          </Col>
+        </Row>
+        {/* Show edit success message*/}
+        {createSuccess && (
+          <Alert variant="success" className="mt-3">
+            {createSuccess}
+          </Alert>
+        )}
+
+        {/* Show edit error message*/}
         {editError && (
           <Alert variant="danger" className="mt-3">
             {editError}
           </Alert>
         )}
+
+        {/* Show edit success message*/}
+        {editSuccess && (
+          <Alert variant="success" className="mt-3">
+            {editSuccess}
+          </Alert>
+        )}
+
         {/* User table */}
         {users && users.length > 0 ? (
           <>
@@ -176,18 +243,18 @@ function UserManagement() {
                 <tr key={u.name}>
                   {editIndex === index ? (
                     <>
-                      <td><Form.Control type="text" name="name" value={editedUser.name} onChange={handleEditChange} disabled /></td>
+                      <td><Form.Control type="text" name="name" value={editedUser.name} onChange={handleEditChange} disabled={editedUser.name === 'admin'} /></td>
                       <td><Form.Control type="password" name="password" value={editedUser.password} onChange={handleEditChange} /></td>
                       <td><Form.Control type="email" name="email" value={editedUser.email} onChange={handleEditChange} /></td>
                       <td><Form.Control type="date" name="dateOfBirth" value={editedUser.dateOfBirth} onChange={handleEditChange} /></td>
                       <td>
-                        <Form.Select name="status" value={editedUser.status} onChange={handleEditChange}>
+                        <Form.Select name="status" value={editedUser.status} onChange={handleEditChange} disabled={editedUser.name === 'admin'}>
                           <option value="enabled">enabled</option>
                           <option value="disabled">disabled</option>
                         </Form.Select>
                       </td>
                       <td>
-                        <Form.Select name="groups" value={editedUser.groups} onChange={handleEditChange}>
+                        <Form.Select name="groups" value={editedUser.groups} onChange={handleEditChange} disabled={editedUser.name === 'admin'}>
                           <option value="user">User</option>
                           <option value="moderator">Moderator</option>
                           <option value="admin">Admin</option>

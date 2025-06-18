@@ -19,7 +19,7 @@ function App() {
         <Route path="/login" element={<LoginPage onLogin={() => setIsAuthenticated(true)} />} />
         {/* Protected Route */}
         <Route path="/users" element={
-            <ProtectedRoutes>
+            <ProtectedRoutes requiredGroup="admin">
               <UserManagement />
             </ProtectedRoutes>
           }/>

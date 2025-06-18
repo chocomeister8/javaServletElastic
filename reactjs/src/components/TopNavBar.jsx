@@ -8,7 +8,7 @@ function TopNavbar({ activeTab, onTabChange}) {
   const [userName, setUserName] = useState('');
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     async function fetchUserName() {
@@ -25,6 +25,12 @@ function TopNavbar({ activeTab, onTabChange}) {
         const data = await response.json(); // <-- Make sure this line exists!
         setUserName(data.name); // save to state
         setIsAuthenticated(true);
+
+        if (data.groups && data.groups.toLowerCase() === 'admin') {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
 
       } catch (error) {
         setIsAuthenticated(false);
@@ -70,7 +76,9 @@ function TopNavbar({ activeTab, onTabChange}) {
       <Container>
         <Nav className="d-flex flex-row" activeKey={activeTab} onSelect={(handleSelect)}>
           <Nav.Link eventKey="reactjavaelastic" href="#" className="px-3">ReactJavaElastic</Nav.Link>
+          {isAdmin && (
           <Nav.Link eventKey="usermanagement" href="#" className="px-3">UserManagement</Nav.Link>
+        )}
         </Nav>
         <div className="d-flex align-items-center">
           <span className="text-white me-3">Hello, {userName}</span>
