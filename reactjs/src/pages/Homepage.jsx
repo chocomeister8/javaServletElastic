@@ -18,9 +18,6 @@ function Homepage() {
           <p className="lead">
             This is your simple homepage. Use the navigation bar to explore the app.
           </p>
-          <Button variant="primary" onClick={() => navigate('/users')}>
-            Go to User Management
-          </Button>
         </Col>
       </Row>
     </Container>

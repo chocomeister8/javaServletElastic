@@ -98,7 +98,7 @@ public class UserInfoServlet extends HttpServlet {
             // ✅ If everything is good, return user info
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("application/json");
-            resp.getWriter().write("{\"name\": \"" + user.getName() + "\", \"groups\": \"" + user.getGroups() + "\"}");
+            resp.getWriter().write("{\"name\": \"" + user.getName() + "\" , \"password\": \"" + user.getPassword() + "\" , \"groups\": \"" + user.getGroups() + "\", \"email\": \"" + user.getEmail() + "\", \"dob\": \"" + user.getDateOfBirth() + "\" }");
             
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

@@ -25,7 +25,6 @@ import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
-import co.elastic.clients.elasticsearch._types.Refresh;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 
@@ -152,15 +151,30 @@ public class UserServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            int page = Integer.parseInt(req.getParameter("page"));
-            int size = Integer.parseInt(req.getParameter("size"));
-            int from = (page - 1) * size;
 
-            SearchRequest searchRequest = SearchRequest.of(s -> s
-                .index("users")
-                .from(from)
-                .size(size)
-            );
+            String searchTerm = req.getParameter("search");
+
+            SearchRequest searchRequest;
+
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                // Search by name using prefix match (for startsWith behavior)
+                searchRequest = SearchRequest.of(s -> s
+                    .index("users")
+                    .query(q -> q
+                        .prefix(p -> p
+                            .field("name")  // or just "name" depending on your mapping
+                            .value(searchTerm.toLowerCase())
+                        )
+                    )
+                    .size(10000)
+                );
+            } else {
+                // No search term, fetch all with pagination
+                searchRequest = SearchRequest.of(s -> s
+                    .index("users")
+                    .size(10000)
+                );
+            }
 
             SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
 
@@ -168,13 +182,8 @@ public class UserServlet extends HttpServlet {
                 .map(Hit::source)
                 .collect(Collectors.toList());
 
-            // Get total count for pagination
-            long totalHits = searchResponse.hits().total().value();
-            int totalPages = (int) Math.ceil((double) totalHits / size);
-
             Map<String, Object> result = new HashMap<>();
             result.put("users", users);
-            result.put("totalPages", totalPages);
 
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
@@ -190,14 +199,20 @@ public class UserServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
+        System.out.println("doPut called");
+
         try {
             // Read request body
             BufferedReader reader = request.getReader();
             String requestBody = reader.lines().collect(Collectors.joining());
             reader.close();
+            System.out.println("Received request body: " + requestBody);
+
 
             // Parse JSON to User
             User updatedUser = mapper.readValue(requestBody, User.class);
+
+            System.out.println("Parsed User: " + updatedUser);
 
             // Validate fields
             if (updatedUser.getName() == null || updatedUser.getPassword() == null || updatedUser.getEmail() == null || updatedUser.getDateOfBirth() == null || updatedUser.getStatus() == null) {
@@ -258,6 +273,14 @@ public class UserServlet extends HttpServlet {
                 return;
             }
 
+            // ✅ Prevent username change
+            User existingUser = searchResponse.hits().hits().get(0).source();
+            if (!existingUser.getName().equals(updatedUser.getName())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("{\"error\": \"Username cannot be changed.\"}");
+                return;
+            }
+
             String docId = searchResponse.hits().hits().get(0).id(); // get ES doc ID
 
             // Reindex user (overwrite the document)
@@ -274,6 +297,7 @@ public class UserServlet extends HttpServlet {
             response.getWriter().write("{\"message\": \"User updated successfully.\"}");
 
         } catch (Exception e) {
+            System.out.println("Exception caught in doPut:");
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("{\"error\": \"Failed to update user.\"}");

@@ -17,8 +17,8 @@ function UserManagement() {
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState([]);
     
   // User form state
   const [user, setUser] = useState({
@@ -35,15 +35,13 @@ function UserManagement() {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async (page = 1) => {
-    console.log('fetchUsers called with page:', page);
+  const fetchUsers = async () => {
     try {
-      const response = await axios.get(`http://localhost:8080/servletapp/api/users?page=${page}&size=5`);
+      const response = await axios.get(`http://localhost:8080/servletapp/api/users`);
       console.log('Fetched users:', response.data.users.length);
       setUsers(response.data.users);
+      setFilteredUsers(response.data.users);
       console.log('Users updated:', response.data.users);
-      setTotalPages(response.data.totalPages);
-      setCurrentPage(page); // 👈 Add this line
     } catch (error) {
       console.error('Error fetching users:', error);
     }
@@ -78,7 +76,7 @@ function UserManagement() {
       const response = await axios.post('http://localhost:8080/servletapp/api/users',formattedUser,{headers: {'Content-Type': 'application/json',},withCredentials: true,});
       console.log('User created:', response.data);
       console.log('Fetching users after creation');
-      await fetchUsers(currentPage);
+      await fetchUsers();
       setCreateSuccess(response.data.message);
 
       setShowModal(false);
@@ -133,6 +131,7 @@ function UserManagement() {
       const updatedUsers = [...users];
       updatedUsers[index] = updatedUser;
       setUsers(updatedUsers);
+      await fetchUsers();
       setEditSuccess(response.data.message);
 
       setEditIndex(null);
@@ -142,6 +141,20 @@ function UserManagement() {
       const message = error.response?.data?.error || 'Failed to update user.';
       console.error('Error updating user:', message);
       setEditError(message);
+    }
+  };
+
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+
+    if (!value.trim()) {
+      setFilteredUsers(users); // show all if search is empty
+    } else {
+      const lowerValue = value.toLowerCase();
+      const filtered = users.filter(user =>
+        user.name.toLowerCase().startsWith(lowerValue)
+      );
+      setFilteredUsers(filtered);
     }
   };
 
@@ -188,15 +201,12 @@ function UserManagement() {
 
     <div className="container mt-5">
       <Card className="mt-3 p-3">
-        <div className="mb-3">
+        <div>
           <h2>User Management Page</h2>
         </div>
         <Row className="align-items-center">
-          <Col md={8} className="mb-1">
+          <Col md={10} className="mb-1">
             <Form.Control style={{ minWidth: '100%' }} type="text" placeholder="Search by name" onChange={(e) => handleSearch(e.target.value)}/>
-          </Col>
-          <Col md={2} className="mb-1">
-            <Button style={{ minWidth: '100%' }} variant="secondary" onClick={() => handleSearchButtonClick()}>Search</Button>
           </Col>
           <Col md={2} className="mb-1">
             <Button style={{ minWidth: '100%' }} variant="success" onClick={() => setShowModal(true)}>Create User</Button>
@@ -204,21 +214,21 @@ function UserManagement() {
         </Row>
         {/* Show edit success message*/}
         {createSuccess && (
-          <Alert variant="success" className="mt-3">
+          <Alert variant="success" className="mt-2">
             {createSuccess}
           </Alert>
         )}
 
         {/* Show edit error message*/}
         {editError && (
-          <Alert variant="danger" className="mt-3">
+          <Alert variant="danger" className="mt-2">
             {editError}
           </Alert>
         )}
 
         {/* Show edit success message*/}
         {editSuccess && (
-          <Alert variant="success" className="mt-3">
+          <Alert variant="success" className="mt-2">
             {editSuccess}
           </Alert>
         )}
@@ -226,82 +236,70 @@ function UserManagement() {
         {/* User table */}
         {users && users.length > 0 ? (
           <>
-          <Table striped bordered hover responsive className="mt-3">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Password</th>
-                <th>Email</th>
-                <th>Date of Birth</th>
-                <th>Status</th>
-                <th>Groups</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u, index) => (
-                <tr key={u.name}>
-                  {editIndex === index ? (
-                    <>
-                      <td><Form.Control type="text" name="name" value={editedUser.name} onChange={handleEditChange} disabled={editedUser.name === 'admin'} /></td>
-                      <td><Form.Control type="password" name="password" value={editedUser.password} onChange={handleEditChange} /></td>
-                      <td><Form.Control type="email" name="email" value={editedUser.email} onChange={handleEditChange} /></td>
-                      <td><Form.Control type="date" name="dateOfBirth" value={editedUser.dateOfBirth} onChange={handleEditChange} /></td>
-                      <td>
-                        <Form.Select name="status" value={editedUser.status} onChange={handleEditChange} disabled={editedUser.name === 'admin'}>
-                          <option value="enabled">enabled</option>
-                          <option value="disabled">disabled</option>
-                        </Form.Select>
-                      </td>
-                      <td>
-                        <Form.Select name="groups" value={editedUser.groups} onChange={handleEditChange} disabled={editedUser.name === 'admin'}>
-                          <option value="user">User</option>
-                          <option value="moderator">Moderator</option>
-                          <option value="admin">Admin</option>
-                        </Form.Select>
-                      </td>
-                      <td>
-                        <div className="d-flex gap-2">
-                          <Button variant="success" size="sm" onClick={() => handleSaveEdit(index)}>
-                            Save
-                          </Button>
-                          <Button variant="secondary" size="sm" onClick={() => cancelEdit()}>
-                            Cancel
-                          </Button>
-                        </div>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td>{u.name}</td>
-                      <td>{'********'}</td>
-                      <td>{u.email}</td>
-                      <td>{u.dateOfBirth}</td>
-                      <td>{u.status}</td>
-                      <td>{u.groups}</td>
-                      <td>
-                        <Button variant="secondary" size="sm" onClick={() => startEdit(index)}>Edit</Button>
-                      </td>
-                    </>
-                  )}
+          <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+            <Table striped bordered hover responsive className="mt-3">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Password</th>
+                  <th>Email</th>
+                  <th>Date of Birth</th>
+                  <th>Status</th>
+                  <th>Groups</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-          {totalPages > 1 && (
-            <div className="d-flex justify-content-center my-3">
-              {Array.from({ length: totalPages }, (_, index) => (
-                <Button
-                  key={index + 1}
-                  onClick={() => fetchUsers(index + 1)}
-                  variant={currentPage === index + 1 ? "secondary" : "outline-secondary"}
-                  className="mx-1"
-                >
-                  {index + 1}
-                </Button>
-              ))}
-            </div>
-          )}
+              </thead>
+              <tbody>
+                {filteredUsers.map((u, index) => (
+                  <tr key={u.name}>
+                    {editIndex === index ? (
+                      <>
+                        <td><Form.Control type="text" name="name" value={editedUser.name} onChange={handleEditChange} disabled/></td>
+                        <td><Form.Control type="password" name="password" value={editedUser.password} onChange={handleEditChange} /></td>
+                        <td><Form.Control type="email" name="email" value={editedUser.email} onChange={handleEditChange} /></td>
+                        <td><Form.Control type="date" name="dateOfBirth" value={editedUser.dateOfBirth} onChange={handleEditChange} /></td>
+                        <td>
+                          <Form.Select name="status" value={editedUser.status} onChange={handleEditChange} disabled={editedUser.name === 'admin'}>
+                            <option value="enabled">enabled</option>
+                            <option value="disabled">disabled</option>
+                          </Form.Select>
+                        </td>
+                        <td>
+                          <Form.Select name="groups" value={editedUser.groups} onChange={handleEditChange} disabled={editedUser.name === 'admin'}>
+                            <option value="user">User</option>
+                            <option value="moderator">Moderator</option>
+                            <option value="admin">Admin</option>
+                          </Form.Select>
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <Button variant="success" size="sm" onClick={() => handleSaveEdit(index)}>
+                              Save
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={() => cancelEdit()}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{u.name}</td>
+                        <td>{'********'}</td>
+                        <td>{u.email}</td>
+                        <td>{u.dateOfBirth}</td>
+                        <td>{u.status}</td>
+                        <td>{u.groups}</td>
+                        <td>
+                          <Button variant="secondary" size="sm" onClick={() => startEdit(index)}>Edit</Button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
           </>
         ) : (
           <Alert variant="info" className="mt-3">
