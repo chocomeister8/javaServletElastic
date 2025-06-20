@@ -1,0 +1,73 @@
+.calendar-container {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-task-wrapper {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* Calendar styling */
+.react-calendar {
+  flex: 1;
+  min-width: 600px;
+  background-color: #adadad;
+  border: 1px solid #000000;
+  border-radius: 12px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* Date tile styling */
+.react-calendar__tile {
+  color: #000000;
+  background: transparent;
+}
+
+.react-calendar__tile--active {
+  background: #e0e0e0 !important;
+  color: #fff !important;
+  border-radius: 8px;
+}
+
+.react-calendar__tile:hover {
+  background-color: #333;
+  border-radius: 6px;
+}
+
+.react-calendar__tile--now {
+  background: #6dff86;
+  border: 1px solid #6c6c6c;
+  border-radius: 8px;
+
+}
+
+/* Task section */
+.task-display {
+  flex: 1;
+  min-width: 300px;
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+}
+
+.task-list {
+  list-style: none;
+  padding: 0;
+}
+
+.task-list li {
+  background-color: #ffffff;
+  padding: 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}

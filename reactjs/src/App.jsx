@@ -2,6 +2,7 @@ import './App.css';
 import LoginPage from './pages/Login';
 import Homepage from './pages/Homepage';
 import UserManagement from './pages/UserManagement';
+import TaskCalendar from './pages/TaskCalendar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ProtectedRoutes from './components/ProtectedRoutes';
 
@@ -27,6 +28,12 @@ function App() {
         <Route path="/home" element={
             <ProtectedRoutes>
               <Homepage/>
+            </ProtectedRoutes>
+          }/>
+          {/* Protected Route */}
+        <Route path="/tasks" element={
+            <ProtectedRoutes>
+              <TaskCalendar/>
             </ProtectedRoutes>
           }/>
         {/* Default Route */}

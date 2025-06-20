@@ -85,6 +85,9 @@ function TopNavbar({ activeTab, onTabChange}) {
       case 'usermanagement':
         navigate('/users'); // your user management route
         break;
+      case 'taskscalendar':
+      navigate('/tasks'); // your tasks route
+        break;
       default:
         break;
     }
@@ -160,8 +163,9 @@ function TopNavbar({ activeTab, onTabChange}) {
         <Nav className="d-flex flex-row" activeKey={activeTab} onSelect={(handleSelect)}>
           <Nav.Link eventKey="reactjavaelastic" href="#" className="px-3">ReactJavaElastic</Nav.Link>
           {isAdmin && (
-          <Nav.Link eventKey="usermanagement" href="#" className="px-3">UserManagement</Nav.Link>
+          <Nav.Link eventKey="usermanagement" href="#" className="px-3">User Management</Nav.Link>
         )}
+          <Nav.Link eventKey="taskscalendar" href="#" className="px-3">Task Calender</Nav.Link>
         </Nav>
         <div className="d-flex align-items-center">
           <span className="text-white me-3" onClick={handleShowModal} style={{ cursor: 'pointer' }}>Hello, {userName}</span>
