@@ -4,8 +4,6 @@ import 'react-calendar/dist/Calendar.css';
 import TopNavbar from '../components/TopNavbar';
 import '../TasksCalendar.css';
 
-
-
 const TaskCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('taskscalendar');
