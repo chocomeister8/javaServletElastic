@@ -96,14 +96,7 @@ public class UserServlet extends HttpServlet {
             }
 
             // 🔍 Check if the name already exists
-            SearchRequest searchRequest = SearchRequest.of(s -> s
-                .index("users")
-                .query(q -> q
-                    .term(t -> t
-                        .field("name")
-                        .value(user.getName())
-                    )
-                )
+            SearchRequest searchRequest = SearchRequest.of(s -> s.index("users").query(q -> q.term(t -> t.field("name").value(user.getName())))
             );
 
             SearchResponse<User> searchResponse = client.search(searchRequest, User.class);

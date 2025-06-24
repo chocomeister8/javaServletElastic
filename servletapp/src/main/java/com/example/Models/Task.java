@@ -15,17 +15,21 @@ public class Task {
     private LocalDateTime taskEndDate;
 
     private String taskOwner;
+    private String taskColor;
+
 
     // No-arg constructor
-    public Task() {}
+    public Task() {
+    }
 
-    public Task(int taskID, String taskName, String taskDescription, LocalDateTime taskStartDate, LocalDateTime taskEndDate, String taskOwner) {
+    public Task(int taskID, String taskName, String taskDescription, LocalDateTime taskStartDate, LocalDateTime taskEndDate, String taskOwner, String taskColor) {
         this.taskID = taskID;
         this.taskName = taskName;
         this.taskDescription = taskDescription;
         this.taskStartDate = taskStartDate;
         this.taskEndDate = taskEndDate;
         this.taskOwner = taskOwner;
+        this.taskColor = taskColor;
     }
 
     // Getters
@@ -35,6 +39,7 @@ public class Task {
     public LocalDateTime getTaskStartDate() { return taskStartDate; }
     public LocalDateTime getTaskEndDate() { return taskEndDate; }
     public String getTaskOwner() { return taskOwner; }
+    public String getTaskColor() { return taskColor; }
 
     // Setters
     public void setTaskID(int taskID) { this.taskID = taskID; }
@@ -43,5 +48,6 @@ public class Task {
     public void setTaskStartDate(LocalDateTime taskStartDate) { this.taskStartDate = taskStartDate; }
     public void setTaskEndDate(LocalDateTime taskEndDate) { this.taskEndDate = taskEndDate; }
     public void setTaskOwner(String taskOwner) { this.taskOwner = taskOwner; }
+    public void setTaskColor(String taskColor) { this.taskColor = taskColor; }
 }
 

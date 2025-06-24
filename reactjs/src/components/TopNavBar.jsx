@@ -5,7 +5,7 @@ import { useState, useEffect} from 'react';
 import { Navbar, Nav, Container, Button, Modal, Form, Row, Col, ToastContainer, Toast } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
-function TopNavbar({ activeTab, onTabChange}) {
+function TopNavbar({ activeTab, onTabChange, setName }) {
   const [userName, setUserName] = useState('');
   const [userPassword, setPassword] = useState('');
   const [userGroup, setGroup] = useState('');
@@ -45,6 +45,11 @@ function TopNavbar({ activeTab, onTabChange}) {
         setGroup(data.groups);
         setIsAuthenticated(true);
 
+        // ✅ Pass the name up to parent
+        if (typeof setName === 'function') {
+          setName(data.name); // ✅ pass it to parent state
+        }
+
         if (data.groups && data.groups.toLowerCase() === 'admin') {
           setIsAdmin(true);
         } else {
@@ -58,7 +63,7 @@ function TopNavbar({ activeTab, onTabChange}) {
     }
 
     fetchUserName();
-  }, []);
+  }, [setUserName]);
 
   const handleLogout = async () => {
     try {
