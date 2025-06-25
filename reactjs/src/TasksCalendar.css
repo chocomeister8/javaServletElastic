@@ -1,73 +1,103 @@
+/* Main container */
 .calendar-container {
   max-width: 1000px;
   margin: 40px auto;
-  padding: 20px;
+  padding: 24px;
   background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', sans-serif;
 }
 
+/* Flex layout for calendar and task display */
 .calendar-task-wrapper {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   justify-content: space-between;
   flex-wrap: wrap;
 }
 
-/* Calendar styling */
+/* Calendar */
 .react-calendar {
   flex: 1;
   min-width: 600px;
-  background-color: #d5dff9;
-  border: 1px solid #000000;
-  border-radius: 12px;
-  padding: 10px;
-  box-sizing: border-box;
+  background-color: #f0f4ff;
+  border: none;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
 }
 
-/* Date tile styling */
+/* Tiles (individual day cells) */
 .react-calendar__tile {
-  color: #000000;
+  color: #1a1a1a;
   background: transparent;
-}
-
-.react-calendar__tile--active {
-  background: #969696 !important;
-  color: #fff !important;
-  border-radius: 8px;
+  padding: 12px 0;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+  position: relative;
 }
 
 .react-calendar__tile:hover {
-  background-color: #333;
-  border-radius: 6px;
+  background-color: #cde1ff;
 }
 
 .react-calendar__tile--now {
-  background: #6dff86;
-  border: 1px solid #6c6c6c;
-  border-radius: 8px;
+  background: #d0ffd0;
+  border: 1px solid #8cd68c;
+  font-weight: bold;
+}
 
+.react-calendar__tile--active {
+  background-color: #4c8cff !important;
+  color: white !important;
+}
+
+/* Dot indicator */
+.dot {
+  height: 6px;
+  width: 6px;
+  background-color: #4CAF50;
+  border-radius: 50%;
+  margin: 4px auto 0;
 }
 
 /* Task section */
 .task-display {
   flex: 1;
   min-width: 300px;
-  background-color: #f8f9fa;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+  background-color: #f9f9f9;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.task-display h4 {
+  margin-bottom: 16px;
+  color: #333;
 }
 
 .task-list {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .task-list li {
   background-color: #ffffff;
-  padding: 10px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.1s ease;
+}
+
+.task-list li:hover {
+  transform: scale(1.02);
+  background-color: #eef6ff;
+}
+
+/* Button spacing */
+button {
+  font-weight: 500;
 }

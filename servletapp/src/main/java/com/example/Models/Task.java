@@ -4,14 +4,13 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
 public class Task {
-    private int taskID;
     private String taskName;
     private String taskDescription;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime taskStartDate;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime taskEndDate;
 
     private String taskOwner;
@@ -22,8 +21,7 @@ public class Task {
     public Task() {
     }
 
-    public Task(int taskID, String taskName, String taskDescription, LocalDateTime taskStartDate, LocalDateTime taskEndDate, String taskOwner, String taskColor) {
-        this.taskID = taskID;
+    public Task(String taskName, String taskDescription, LocalDateTime taskStartDate, LocalDateTime taskEndDate, String taskOwner, String taskColor) {
         this.taskName = taskName;
         this.taskDescription = taskDescription;
         this.taskStartDate = taskStartDate;
@@ -33,7 +31,6 @@ public class Task {
     }
 
     // Getters
-    public int getTaskID() { return taskID; }
     public String getTaskName() { return taskName; }
     public String getTaskDescription() { return taskDescription; }
     public LocalDateTime getTaskStartDate() { return taskStartDate; }
@@ -42,7 +39,6 @@ public class Task {
     public String getTaskColor() { return taskColor; }
 
     // Setters
-    public void setTaskID(int taskID) { this.taskID = taskID; }
     public void setTaskName(String taskName) { this.taskName = taskName; }
     public void setTaskDescription(String taskDescription) { this.taskDescription = taskDescription; }
     public void setTaskStartDate(LocalDateTime taskStartDate) { this.taskStartDate = taskStartDate; }
