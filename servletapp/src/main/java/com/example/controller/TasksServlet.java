@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Objects;
-import java.util.TimeZone;
 
 import com.example.models.Task;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -65,7 +64,7 @@ public class TasksServlet extends HttpServlet{
             Task task = mapper.readValue(json, Task.class);
 
             // Field Validation
-            if (task.getTaskName() == null || task.getTaskStartDate() == null || task.getTaskEndDate() == null || task.getTaskOwner() == null) {
+            if (task.getTaskName() == null || task.getTaskStartDate() == null || task.getTaskEndDate() == null || task.getTaskOwner() == null || task.getTaskColor() == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write("{\"error\": \"Missing required fields.\"}");
                 return;

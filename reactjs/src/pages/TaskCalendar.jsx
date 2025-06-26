@@ -36,7 +36,7 @@ const TaskCalendar = () => {
     }
   }, [username]);
   
-  // add user data
+  // add task data
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -52,16 +52,10 @@ const TaskCalendar = () => {
       console.log('Fetching tasks after creation');
       setCreateSuccess(response.data.message);
 
-      setShowModal(false);
-      setTasks({
-        taskName: '',
-        taskDescription: '',
-        taskStartDate: '',
-        taskEndDate: '',
-        taskOwner: username,
-        taskColor: '',
-      });
-
+      if (username) {
+        fetchTasksByUser(username);
+        setShowModal(false);
+      }
     } catch (error) {
       console.error('Error creating task:', error.response?.data || error.message);
       setCreateError(error.response?.data?.error || 'Failed to create task. Please try again.');
@@ -117,6 +111,24 @@ const TaskCalendar = () => {
   // Format date to YYYY-MM-DD for easy key matching
   const formatDate = (date) => date.toLocaleDateString('en-CA'); // en-CA → 2025-06-28
 
+  const formatDateTime = (input) => {
+    const date = new Date(input);
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+
+    let hours = date.getHours();
+    const minutes = `${date.getMinutes()}`.padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+
+    hours = hours % 12;
+    hours = hours ? hours : 12; // hour '0' should be '12'
+
+    const formattedTime = `${hours}:${minutes} ${ampm}`;
+
+    return `${year}-${month}-${day} ${formattedTime}`;
+  };
+
   const tileContent = ({ date, view }) => {
     if (view !== 'month') return null; // Only show dots on month view
 
@@ -134,11 +146,17 @@ const TaskCalendar = () => {
     return dayTasks ? (
       <ul className="task-list">
         {dayTasks.map((task, index) => (
-          <li key={index}>{task.taskName}</li>
+          <li key={index} style={{backgroundColor: task.taskColor, padding: '10px',borderRadius: '8px',marginBottom: '10px'}}>
+            <div><strong>Task:</strong> {task.taskName}</div>
+            <div><strong>Start:</strong> {formatDateTime(task.taskStartDate)}</div>
+            <div><strong>End:</strong> {formatDateTime(task.taskEndDate)}</div>
+          </li>
         ))}
       </ul>
     ) : (
-      <p>No tasks for this day.</p>
+      <ul className="task-list">
+        <li>No tasks for this day.</li>
+      </ul>
     );
   };
 
@@ -179,33 +197,45 @@ const TaskCalendar = () => {
     return () => clearTimeout(timer);
   }, [editSuccess]);
 
+  useEffect(() => {
+    let timer;
+
+    if (createError) {
+      timer = setTimeout(() => {
+        setCreateError(null); // Clear success message after delay
+      }, 3000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [createError]);
+
   return (
     <>
       <TopNavbar activeTab={activeTab} onTabChange={setActiveTab} setName={setUserName} />
-      {/* Show edit success message*/}
-        {createSuccess && (
-          <Alert variant="success" className="mt-2">
-            {createSuccess}
-          </Alert>
-        )}
-
-        {/* Show edit error message*/}
-        {editError && (
-          <Alert variant="danger" className="mt-2">
-            {editError}
-          </Alert>
-        )}
-
-        {/* Show edit success message*/}
-        {editSuccess && (
-          <Alert variant="success" className="mt-2">
-            {editSuccess}
-          </Alert>
-        )}
        <div className="calendar-container">
+        {/* Show edit success message*/}
+          {createSuccess && (
+            <Alert variant="success" className="mt-2">
+              {createSuccess}
+            </Alert>
+          )}
+
+          {/* Show edit error message*/}
+          {editError && (
+            <Alert variant="danger" className="mt-2">
+              {editError}
+            </Alert>
+          )}
+
+          {/* Show edit success message*/}
+          {editSuccess && (
+            <Alert variant="success" className="mt-2">
+              {editSuccess}
+            </Alert>
+          )}
         <Row className="align-items-center">
           <Col md={10} className="mb-1">
-            <h4>Task Calendar, {username}</h4>
+            <h4>Task Calendar</h4>
           </Col>
           <Col md={2} className="mb-1">
             <Button style={{ minWidth: '50%' }} variant="success" onClick={() => setShowModal(true)}>Add a Task</Button>
@@ -219,7 +249,7 @@ const TaskCalendar = () => {
             tileContent={tileContent}
           />
           <div className="task-display">
-            <h4>Tasks on {selectedDate.toDateString()}:</h4>
+            <h5>Tasks on {selectedDate.toLocaleDateString('en-CA')}:</h5>
             {renderTasksForDate()}
           </div>
         </div>
@@ -232,7 +262,7 @@ const TaskCalendar = () => {
 
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
-            <Row className="mb-2">
+            <Row className="mb-1">
               <Col md={6}>
                 <FloatingLabel controlId="formName" label="Task Name:">
                   <Form.Control type="text" name="taskName" onChange={handleChange} value={task.taskName} placeholder="Task Name" required/>
@@ -244,7 +274,7 @@ const TaskCalendar = () => {
                 </FloatingLabel>
               </Col>
             </Row>
-            <Row className="mb-2">
+            <Row className="mb-1">
               <Col md={6}>
                   <FloatingLabel controlId="formStartDate" label="Start Date:">
                     <Form.Control type="datetime-local" name="taskStartDate" onChange={handleChange} value={task.taskStartDate} placeholder="Task Start Date" onKeyDown={(e) => e.preventDefault()} required/>
@@ -256,7 +286,7 @@ const TaskCalendar = () => {
                 </FloatingLabel>
               </Col>
             </Row>
-            <Row className="mb-2">
+            <Row className="mb-1">
               <Col md={12}>
                 <FloatingLabel controlId="formColor" label="Task Color:">
                   <Form.Select name="taskColor" value={task.taskColor} onChange={handleChange} required>
@@ -273,6 +303,16 @@ const TaskCalendar = () => {
                     <option value="mintcream" style={{ backgroundColor: 'mintcream' }}>mintcream</option>
                   </Form.Select>
                 </FloatingLabel>
+              </Col>
+            </Row>
+            <Row className="mb-1">
+              <Col md={12}>
+              {/* Show edit success message*/}
+              {createError && (
+                <Alert variant="success" className="mt-2">
+                  {createError}
+                </Alert>
+              )}
               </Col>
             </Row>
           </Modal.Body>
