@@ -54,6 +54,17 @@ const TaskCalendar = () => {
 
       if (username) {
         fetchTasksByUser(username);
+
+        // ✅ Reset form fields here
+        setTask({
+          taskName: '',
+          taskDescription: '',
+          taskStartDate: '',
+          taskEndDate: '',
+          taskOwner: username,
+          taskColor: '',
+        });
+
         setShowModal(false);
       }
     } catch (error) {
@@ -68,6 +79,10 @@ const TaskCalendar = () => {
     // Update task state
     setTask(prev => {
       const updatedTask = { ...prev, [name]: value };
+
+      if (name === 'taskStartDate') {
+      updatedTask.taskEndDate = value;
+    }
 
       return updatedTask;
     });
@@ -249,7 +264,7 @@ const TaskCalendar = () => {
             tileContent={tileContent}
           />
           <div className="task-display">
-            <h5>Tasks on {selectedDate.toLocaleDateString('en-CA')}:</h5>
+            <h5>Date: {selectedDate.toLocaleDateString('en-CA')}:</h5>
             {renderTasksForDate()}
           </div>
         </div>
@@ -282,7 +297,7 @@ const TaskCalendar = () => {
                 </Col>
               <Col md={6}>
                 <FloatingLabel controlId="formEndDate" label="End Date:">
-                  <Form.Control type="datetime-local" name="taskEndDate" onChange={handleChange} value={task.taskEndDate} placeholder="Task End Date" onKeyDown={(e) => e.preventDefault()} required/>
+                  <Form.Control type="datetime-local" name="taskEndDate" onChange={handleChange} value={task.taskEndDate} placeholder="Task End Date" onKeyDown={(e) => e.preventDefault() } disabled={!task.taskStartDate}/>
                 </FloatingLabel>
               </Col>
             </Row>
