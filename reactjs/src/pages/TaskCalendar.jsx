@@ -19,6 +19,9 @@ const TaskCalendar = () => {
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+
   // Task form state
   const [task, setTask] = useState({
     taskName: '',
@@ -154,6 +157,43 @@ const TaskCalendar = () => {
     return null;
   };
 
+  const handleEditTaskClick = (task) => {
+    setSelectedTask(task);
+    setShowEditModal(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+
+    setSelectedTask(prev => {
+      const updated = { ...prev, [name]: value };
+
+      if (name === 'taskStartDate') {
+        updated.taskEndDate = value;
+      }
+
+      return updated;
+    });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.put(`http://localhost:8080/servletapp/api/tasks/${selectedTask.taskID}`, selectedTask, {
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true,
+      });
+
+      setEditSuccess('Task updated successfully!');
+      fetchTasksByUser(username);
+      setShowEditModal(false);
+    } catch (error) {
+      console.error('Error updating task:', error);
+      setEditError('Failed to update task. Please try again.');
+    }
+  };
+
 
   const renderTasksForDate = () => {
     const formatted = formatDate(selectedDate);
@@ -161,7 +201,7 @@ const TaskCalendar = () => {
     return dayTasks ? (
       <ul className="task-list">
         {dayTasks.map((task, index) => (
-          <li key={index} style={{backgroundColor: task.taskColor, padding: '10px',borderRadius: '8px',marginBottom: '10px'}}>
+          <li key={index} onClick={() => handleEditTaskClick(task)} style={{backgroundColor: task.taskColor, padding: '10px',borderRadius: '8px',marginBottom: '10px'}}>
             <div><strong>Task:</strong> {task.taskName}</div>
             <div><strong>Start:</strong> {formatDateTime(task.taskStartDate)}</div>
             <div><strong>End:</strong> {formatDateTime(task.taskEndDate)}</div>
@@ -338,6 +378,87 @@ const TaskCalendar = () => {
           </Modal.Footer>
         </Form>
       </Modal>
+
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Task</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleEditSubmit}>
+          <Modal.Body>
+            <Row className="mb-1">
+              <Col md={6}>
+                <FloatingLabel controlId="editTaskName" label="Task Name">
+                  <Form.Control
+                    type="text"
+                    name="taskName"
+                    value={selectedTask?.taskName || ''}
+                    onChange={(e) => handleEditChange(e)}
+                    required
+                  />
+                </FloatingLabel>
+              </Col>
+              <Col md={6}>
+                <FloatingLabel controlId="editTaskDescription" label="Task Description">
+                  <Form.Control
+                    type="text"
+                    name="taskDescription"
+                    value={selectedTask?.taskDescription || ''}
+                    onChange={handleEditChange}
+                  />
+                </FloatingLabel>
+              </Col>
+            </Row>
+            <Row className="mb-1">
+              <Col md={6}>
+                <FloatingLabel controlId="editTaskStartDate" label="Start Date">
+                  <Form.Control
+                    type="datetime-local"
+                    name="taskStartDate"
+                    value={selectedTask?.taskStartDate || ''}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </FloatingLabel>
+              </Col>
+              <Col md={6}>
+                <FloatingLabel controlId="editTaskEndDate" label="End Date">
+                  <Form.Control
+                    type="datetime-local"
+                    name="taskEndDate"
+                    value={selectedTask?.taskEndDate || ''}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </FloatingLabel>
+              </Col>
+            </Row>
+            <Row className="mb-1">
+              <Col md={12}>
+                <FloatingLabel controlId="editTaskColor" label="Task Color">
+                  <Form.Select name="taskColor" value={selectedTask?.taskColor || ''} onChange={handleEditChange} required>
+                    <option value="">Select a color</option>
+                    <option value="lightcyan">lightcyan</option>
+                    <option value="lightyellow">lightyellow</option>
+                    <option value="lightgreen">lightgreen</option>
+                    <option value="lightsalmon">lightsalmon</option>
+                    <option value="lightblue">lightblue</option>
+                    <option value="lavender">lavender</option>
+                    <option value="mistyrose">mistyrose</option>
+                    <option value="honeydew">honeydew</option>
+                    <option value="papayawhip">papayawhip</option>
+                    <option value="mintcream">mintcream</option>
+                  </Form.Select>
+                </FloatingLabel>
+              </Col>
+            </Row>
+          </Modal.Body>
+          <Modal.Footer className="justify-content-center">
+            <Button variant="primary" type="submit">Save Changes</Button>
+            <Button variant="secondary" onClick={() => setShowEditModal(false)}>Cancel</Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
     </>
   );
 };
