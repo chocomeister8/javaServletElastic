@@ -160,6 +160,7 @@ const TaskCalendar = () => {
   const handleEditTaskClick = (task) => {
     setSelectedTask(task);
     setShowEditModal(true);
+    console.log(task.taskID);
   };
 
   const handleEditChange = (e) => {
@@ -178,6 +179,8 @@ const TaskCalendar = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+
+    console.log(selectedTask.taskID)
 
     try {
       const response = await axios.put(`http://localhost:8080/servletapp/api/tasks/${selectedTask.taskID}`, selectedTask, {
@@ -437,16 +440,16 @@ const TaskCalendar = () => {
                 <FloatingLabel controlId="editTaskColor" label="Task Color">
                   <Form.Select name="taskColor" value={selectedTask?.taskColor || ''} onChange={handleEditChange} required>
                     <option value="">Select a color</option>
-                    <option value="lightcyan">lightcyan</option>
-                    <option value="lightyellow">lightyellow</option>
-                    <option value="lightgreen">lightgreen</option>
-                    <option value="lightsalmon">lightsalmon</option>
-                    <option value="lightblue">lightblue</option>
-                    <option value="lavender">lavender</option>
-                    <option value="mistyrose">mistyrose</option>
-                    <option value="honeydew">honeydew</option>
-                    <option value="papayawhip">papayawhip</option>
-                    <option value="mintcream">mintcream</option>
+                    <option value="lightcyan" style={{ backgroundColor: 'lightcyan' }}>lightcyan</option>
+                    <option value="lightyellow" style={{ backgroundColor: 'lightyellow' }}>lightyellow</option>
+                    <option value="lightgreen" style={{ backgroundColor: 'lightgreen' }}>lightgreen</option>
+                    <option value="lightsalmon" style={{ backgroundColor: 'lightsalmon' }}>lightsalmon</option>
+                    <option value="lightblue" style={{ backgroundColor: 'lightblue' }}>lightblue</option>
+                    <option value="lavender" style={{ backgroundColor: 'lavender' }}>lavender</option>
+                    <option value="mistyrose" style={{ backgroundColor: 'mistyrose' }}>mistyrose</option>
+                    <option value="honeydew" style={{ backgroundColor: 'honeydew' }}>honeydew</option>
+                    <option value="papayawhip" style={{ backgroundColor: 'papayawhip' }}>papayawhip</option>
+                    <option value="mintcream" style={{ backgroundColor: 'mintcream' }}>mintcream</option>
                   </Form.Select>
                 </FloatingLabel>
               </Col>

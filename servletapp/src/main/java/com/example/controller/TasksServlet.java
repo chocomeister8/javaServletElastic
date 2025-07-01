@@ -30,7 +30,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet("/api/tasks") 
+@WebServlet("/api/tasks/*") 
 public class TasksServlet extends HttpServlet{
     private ElasticsearchClient client;
     private ObjectMapper mapper; // Not static
@@ -124,12 +124,79 @@ public class TasksServlet extends HttpServlet{
         SearchResponse<Task> searchResponse = client.search(searchRequest, Task.class);
 
         List<Task> tasks = searchResponse.hits().hits().stream()
-            .map(hit -> hit.source())
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+        .map(hit -> {
+            Task task = hit.source();
+            if (task != null) {
+                task.setTaskID(hit.id()); // 👈 attach the auto-generated ES doc ID
+            }
+            return task;
+        })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+
 
         resp.setContentType("application/json");
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.getWriter().write(mapper.writeValueAsString(tasks));
     }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String pathInfo = req.getPathInfo(); // e.g., /1234
+        if (pathInfo == null || pathInfo.equals("/")) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\": \"Missing task ID in the URL.\"}");
+            return;
+        }
+
+        String taskID = pathInfo.substring(1); // Remove the leading '/'
+        System.out.println("Updating task with ID: " + taskID);
+
+        try {
+            // Read the JSON body
+            BufferedReader reader = req.getReader();
+            String json = reader.lines().collect(Collectors.joining());
+            Task updatedTask = mapper.readValue(json, Task.class);
+
+            // Validate fields
+            if (updatedTask.getTaskName() == null || updatedTask.getTaskStartDate() == null || 
+                updatedTask.getTaskEndDate() == null || updatedTask.getTaskOwner() == null || 
+                updatedTask.getTaskColor() == null) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\": \"Missing required fields.\"}");
+                return;
+            }
+
+            if (updatedTask.getTaskEndDate().isBefore(updatedTask.getTaskStartDate())) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\": \"End date must be after start date.\"}");
+                return;
+            }
+
+            if (!updatedTask.getTaskName().matches("^[a-zA-Z0-9@-]+$")) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\": \"Invalid task name.\"}");
+                return;
+            }
+
+            // Overwrite the document with the provided ID
+            IndexRequest<Task> request = IndexRequest.of(i -> i
+                .index("tasks")
+                .id(taskID)
+                .document(updatedTask)
+                .refresh(Refresh.True)
+            );
+
+            IndexResponse response = client.index(request);
+            System.out.println("Updated task ID: " + response.id());
+
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.getWriter().write("{\"message\": \"Task updated successfully.\"}");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("{\"error\": \"Failed to update task.\"}");
+        }
+    }
+
 }

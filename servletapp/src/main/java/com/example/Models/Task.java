@@ -3,7 +3,13 @@ package com.example.models;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonIgnoreProperties(value = { "taskID" }, allowGetters = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Task {
+    private String taskID;
     private String taskName;
     private String taskDescription;
 
@@ -31,6 +37,7 @@ public class Task {
     }
 
     // Getters
+    public String getTaskID() { return taskID; }
     public String getTaskName() { return taskName; }
     public String getTaskDescription() { return taskDescription; }
     public LocalDateTime getTaskStartDate() { return taskStartDate; }
@@ -39,6 +46,7 @@ public class Task {
     public String getTaskColor() { return taskColor; }
 
     // Setters
+    public void setTaskID(String taskID) { this.taskID = taskID; }
     public void setTaskName(String taskName) { this.taskName = taskName; }
     public void setTaskDescription(String taskDescription) { this.taskDescription = taskDescription; }
     public void setTaskStartDate(LocalDateTime taskStartDate) { this.taskStartDate = taskStartDate; }
