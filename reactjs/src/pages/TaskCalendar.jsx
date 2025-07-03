@@ -81,10 +81,12 @@ const TaskCalendar = () => {
 
     // Update task state
     setTask(prev => {
-      const updatedTask = { ...prev, [name]: value };
+    const updatedTask = { ...prev, [name]: value };
 
-      if (name === 'taskStartDate') {
-      updatedTask.taskEndDate = value;
+    if (name === 'taskStartDate') {
+      if (!prev.taskEndDate || prev.taskEndDate === prev.taskStartDate) {
+        updatedTask.taskEndDate = value;
+      }
     }
 
       return updatedTask;
@@ -197,6 +199,32 @@ const TaskCalendar = () => {
     }
   };
 
+  const handleDeleteTask = async (e) => {
+    e.preventDefault();
+    if (!selectedTask?.taskID) return;
+
+    const confirmed = window.confirm(`Are you sure you want to delete the task "${selectedTask.taskName}"?`);
+    if (!confirmed) return;
+
+    try {
+      const response = await axios.delete(`http://localhost:8080/servletapp/api/tasks/${selectedTask.taskID}`, {
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true,
+      });
+
+      if (response.status === 200) {
+        alert("Task deleted successfully");
+        setShowEditModal(false);
+        // Refresh task list or update state
+        fetchTasksByUser(username);
+      } else {
+        alert("Failed to delete task: " + response.data.error);
+      }
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      alert("An error occurred while deleting the task.");
+    }
+  };
 
   const renderTasksForDate = () => {
     const formatted = formatDate(selectedDate);
@@ -381,7 +409,6 @@ const TaskCalendar = () => {
           </Modal.Footer>
         </Form>
       </Modal>
-
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Edit Task</Modal.Title>
@@ -458,10 +485,10 @@ const TaskCalendar = () => {
           <Modal.Footer className="justify-content-center">
             <Button variant="primary" type="submit">Save Changes</Button>
             <Button variant="secondary" onClick={() => setShowEditModal(false)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDeleteTask}>Delete Task</Button>
           </Modal.Footer>
         </Form>
       </Modal>
-
     </>
   );
 };

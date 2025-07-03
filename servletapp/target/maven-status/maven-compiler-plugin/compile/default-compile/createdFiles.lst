@@ -1,7 +1,9 @@
 com\example\controller\UserServlet.class
+com\example\Utils\JwtUtil.class
 com\example\models\Post.class
 com\example\controller\AuthServlet.class
 com\example\Utils\CorsFilter.class
+com\example\controller\TasksServlet.class
 com\example\models\Task.class
 com\example\models\User.class
 com\example\controller\PostServlet.class

@@ -199,4 +199,37 @@ public class TasksServlet extends HttpServlet{
         }
     }
 
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String pathInfo = req.getPathInfo(); // e.g. /LuYtqpcByoQg16YZKutd
+
+        if (pathInfo == null || pathInfo.equals("/")) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\": \"Missing task ID in URL.\"}");
+            return;
+        }
+
+        String taskID = pathInfo.substring(1); // Remove the leading "/"
+
+        try {
+            var deleteResponse = client.delete(d -> d
+                .index("tasks")
+                .id(taskID)
+                .refresh(Refresh.True)
+            );
+
+            if (deleteResponse.result().jsonValue().equals("deleted")) {
+                resp.setStatus(HttpServletResponse.SC_OK);
+                resp.getWriter().write("{\"message\": \"Task deleted successfully.\"}");
+            } else {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                resp.getWriter().write("{\"error\": \"Task not found or already deleted.\"}");
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Error deleting task: " + e.getMessage());
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("{\"error\": \"Failed to delete task.\"}");
+        }
+    }
 }
