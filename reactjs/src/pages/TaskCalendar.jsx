@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Modal, Button, Form, Table, Alert, Card, Row, Col, FloatingLabel, Toast, ToastContainer} from 'react-bootstrap';
+import { Modal, Button, Form, Table, Alert, Card, Row, Col, FloatingLabel, Toast, ToastContainer } from 'react-bootstrap';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import TopNavbar from '../components/TopNavbar';
@@ -38,7 +38,7 @@ const TaskCalendar = () => {
       fetchTasksByUser(username);
     }
   }, [username]);
-  
+
   // add task data
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,7 +50,7 @@ const TaskCalendar = () => {
       };
 
       console.log('Submitting task:', formattedTask);
-      const response = await axios.post('http://localhost:8080/servletapp/api/tasks', formattedTask ,{headers: {'Content-Type': 'application/json',},withCredentials: true,});
+      const response = await axios.post('http://localhost:8080/servletapp/api/tasks', formattedTask, { headers: { 'Content-Type': 'application/json', }, withCredentials: true, });
       console.log('Task created:', response.data);
       console.log('Fetching tasks after creation');
       setCreateSuccess(response.data.message);
@@ -81,13 +81,13 @@ const TaskCalendar = () => {
 
     // Update task state
     setTask(prev => {
-    const updatedTask = { ...prev, [name]: value };
+      const updatedTask = { ...prev, [name]: value };
 
-    if (name === 'taskStartDate') {
-      if (!prev.taskEndDate || prev.taskEndDate === prev.taskStartDate) {
-        updatedTask.taskEndDate = value;
+      if (name === 'taskStartDate') {
+        if (!prev.taskEndDate || prev.taskEndDate === prev.taskStartDate) {
+          updatedTask.taskEndDate = value;
+        }
       }
-    }
 
       return updatedTask;
     });
@@ -232,7 +232,7 @@ const TaskCalendar = () => {
     return dayTasks ? (
       <ul className="task-list">
         {dayTasks.map((task, index) => (
-          <li key={index} onClick={() => handleEditTaskClick(task)} style={{backgroundColor: task.taskColor, padding: '10px',borderRadius: '8px',marginBottom: '10px'}}>
+          <li key={index} onClick={() => handleEditTaskClick(task)} style={{ backgroundColor: task.taskColor, padding: '10px', borderRadius: '8px', marginBottom: '10px' }}>
             <div><strong>Task:</strong> {task.taskName}</div>
             <div><strong>Start:</strong> {formatDateTime(task.taskStartDate)}</div>
             <div><strong>End:</strong> {formatDateTime(task.taskEndDate)}</div>
@@ -298,27 +298,27 @@ const TaskCalendar = () => {
   return (
     <>
       <TopNavbar activeTab={activeTab} onTabChange={setActiveTab} setName={setUserName} />
-       <div className="calendar-container">
+      <div className="calendar-container">
         {/* Show edit success message*/}
-          {createSuccess && (
-            <Alert variant="success" className="mt-2">
-              {createSuccess}
-            </Alert>
-          )}
+        {createSuccess && (
+          <Alert variant="success" className="mt-2">
+            {createSuccess}
+          </Alert>
+        )}
 
-          {/* Show edit error message*/}
-          {editError && (
-            <Alert variant="danger" className="mt-2">
-              {editError}
-            </Alert>
-          )}
+        {/* Show edit error message*/}
+        {editError && (
+          <Alert variant="danger" className="mt-2">
+            {editError}
+          </Alert>
+        )}
 
-          {/* Show edit success message*/}
-          {editSuccess && (
-            <Alert variant="success" className="mt-2">
-              {editSuccess}
-            </Alert>
-          )}
+        {/* Show edit success message*/}
+        {editSuccess && (
+          <Alert variant="success" className="mt-2">
+            {editSuccess}
+          </Alert>
+        )}
         <Row className="align-items-center">
           <Col md={10} className="mb-1">
             <h4>Task Calendar</h4>
@@ -351,24 +351,24 @@ const TaskCalendar = () => {
             <Row className="mb-1">
               <Col md={6}>
                 <FloatingLabel controlId="formName" label="Task Name:">
-                  <Form.Control type="text" name="taskName" onChange={handleChange} value={task.taskName} placeholder="Task Name" required/>
+                  <Form.Control type="text" name="taskName" onChange={handleChange} value={task.taskName} placeholder="Task Name" required />
                 </FloatingLabel>
               </Col>
               <Col md={6}>
                 <FloatingLabel controlId="formDescription" label="Task Description:">
-                  <Form.Control type="text" name="taskDescription" onChange={handleChange} value={task.taskDescription} placeholder="Task Description"/>
+                  <Form.Control type="text" name="taskDescription" onChange={handleChange} value={task.taskDescription} placeholder="Task Description" />
                 </FloatingLabel>
               </Col>
             </Row>
             <Row className="mb-1">
               <Col md={6}>
-                  <FloatingLabel controlId="formStartDate" label="Start Date:">
-                    <Form.Control type="datetime-local" name="taskStartDate" onChange={handleChange} value={task.taskStartDate} placeholder="Task Start Date" onKeyDown={(e) => e.preventDefault()} required/>
-                  </FloatingLabel>
-                </Col>
+                <FloatingLabel controlId="formStartDate" label="Start Date:">
+                  <Form.Control type="datetime-local" name="taskStartDate" onChange={handleChange} value={task.taskStartDate} placeholder="Task Start Date" onKeyDown={(e) => e.preventDefault()} required />
+                </FloatingLabel>
+              </Col>
               <Col md={6}>
                 <FloatingLabel controlId="formEndDate" label="End Date:">
-                  <Form.Control type="datetime-local" name="taskEndDate" onChange={handleChange} value={task.taskEndDate} placeholder="Task End Date" onKeyDown={(e) => e.preventDefault() } disabled={!task.taskStartDate}/>
+                  <Form.Control type="datetime-local" name="taskEndDate" onChange={handleChange} value={task.taskEndDate} placeholder="Task End Date" onKeyDown={(e) => e.preventDefault()} disabled={!task.taskStartDate} />
                 </FloatingLabel>
               </Col>
             </Row>
@@ -393,12 +393,12 @@ const TaskCalendar = () => {
             </Row>
             <Row className="mb-1">
               <Col md={12}>
-              {/* Show edit success message*/}
-              {createError && (
-                <Alert variant="success" className="mt-2">
-                  {createError}
-                </Alert>
-              )}
+                {/* Show edit success message*/}
+                {createError && (
+                  <Alert variant="danger" className="mt-2">
+                    {createError}
+                  </Alert>
+                )}
               </Col>
             </Row>
           </Modal.Body>

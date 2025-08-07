@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet("/api/users") 
+@WebServlet("/api/users")
 public class UserServlet extends HttpServlet {
     private ElasticsearchClient client;
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -61,7 +61,8 @@ public class UserServlet extends HttpServlet {
             User user = mapper.readValue(json, User.class);
 
             // Validate fields
-            if (user.getName() == null || user.getPassword() == null || user.getEmail() == null || user.getDateOfBirth() == null || user.getStatus() == null) {
+            if (user.getName() == null || user.getPassword() == null || user.getEmail() == null
+                    || user.getDateOfBirth() == null || user.getStatus() == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write("{\"error\": \"Missing required fields.\"}");
                 return;
@@ -69,13 +70,15 @@ public class UserServlet extends HttpServlet {
 
             if (!user.getName().matches("^[a-z\\- ]+$")) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write("{\"error\": \"Name must contain only lowercase letters, spaces, and hyphens.\"}");
+                resp.getWriter()
+                        .write("{\"error\": \"Name must contain only lowercase letters, spaces, and hyphens.\"}");
                 return;
             }
 
             if (!user.getPassword().matches("^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,12}$")) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write("{\"error\": \"Password must be 8-12 characters and include at least one special character.\"}");
+                resp.getWriter().write(
+                        "{\"error\": \"Password must be 8-12 characters and include at least one special character.\"}");
                 return;
             }
 
@@ -96,8 +99,8 @@ public class UserServlet extends HttpServlet {
             }
 
             // 🔍 Check if the name already exists
-            SearchRequest searchRequest = SearchRequest.of(s -> s.index("users").query(q -> q.term(t -> t.field("name").value(user.getName())))
-            );
+            SearchRequest searchRequest = SearchRequest
+                    .of(s -> s.index("users").query(q -> q.term(t -> t.field("name").value(user.getName()))));
 
             SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
 
@@ -109,17 +112,16 @@ public class UserServlet extends HttpServlet {
 
             // Proceed to index
             IndexRequest<User> request = IndexRequest.of(i -> i
-                .index("users")
-                .document(user)
-                .refresh(Refresh.True)
-            );
+                    .index("users")
+                    .document(user)
+                    .refresh(Refresh.True));
 
             System.out.println("Indexing user to Elasticsearch...");
             IndexResponse response = client.index(request);
             System.out.println("Index response: " + response.result());
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.getWriter().write("{\"message\": \"User created successfully\"}");
-            }
+        }
 
         catch (Exception e) {
             System.out.println("❌ Error indexing user: " + e.getMessage());
@@ -138,7 +140,7 @@ public class UserServlet extends HttpServlet {
             return false;
         }
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
@@ -150,28 +152,24 @@ public class UserServlet extends HttpServlet {
             if (searchTerm != null && !searchTerm.trim().isEmpty()) {
                 // Search by name using prefix match (for startsWith behavior)
                 searchRequest = SearchRequest.of(s -> s
-                    .index("users")
-                    .query(q -> q
-                        .prefix(p -> p
-                            .field("name")  // or just "name" depending on your mapping
-                            .value(searchTerm.toLowerCase())
-                        )
-                    )
-                    .size(10000)
-                );
+                        .index("users")
+                        .query(q -> q
+                                .prefix(p -> p
+                                        .field("name") // or just "name" depending on your mapping
+                                        .value(searchTerm.toLowerCase())))
+                        .size(10000));
             } else {
                 // No search term, fetch all with pagination
                 searchRequest = SearchRequest.of(s -> s
-                    .index("users")
-                    .size(10000)
-                );
+                        .index("users")
+                        .size(10000));
             }
 
             SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
 
             List<User> users = searchResponse.hits().hits().stream()
-                .map(Hit::source)
-                .collect(Collectors.toList());
+                    .map(Hit::source)
+                    .collect(Collectors.toList());
 
             Map<String, Object> result = new HashMap<>();
             result.put("users", users);
@@ -186,7 +184,8 @@ public class UserServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPut(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
@@ -199,14 +198,14 @@ public class UserServlet extends HttpServlet {
             reader.close();
             System.out.println("Received request body: " + requestBody);
 
-
             // Parse JSON to User
             User updatedUser = mapper.readValue(requestBody, User.class);
 
             System.out.println("Parsed User: " + updatedUser);
 
             // Validate fields
-            if (updatedUser.getName() == null || updatedUser.getPassword() == null || updatedUser.getEmail() == null || updatedUser.getDateOfBirth() == null || updatedUser.getStatus() == null) {
+            if (updatedUser.getName() == null || updatedUser.getPassword() == null || updatedUser.getEmail() == null
+                    || updatedUser.getDateOfBirth() == null || updatedUser.getStatus() == null) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 response.getWriter().write("{\"error\": \"Missing required fields.\"}");
                 return;
@@ -214,19 +213,22 @@ public class UserServlet extends HttpServlet {
 
             if (!updatedUser.getName().matches("^[a-z\\- ]+$")) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().write("{\"error\": \"Name must contain only lowercase letters, spaces, and hyphens.\"}");
+                response.getWriter()
+                        .write("{\"error\": \"Name must contain only lowercase letters, spaces, and hyphens.\"}");
                 return;
             }
 
-            if (!updatedUser.getPassword().startsWith("$2a$") && 
-                !updatedUser.getPassword().matches("^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,12}$")) {
+            if (!updatedUser.getPassword().startsWith("$2a$") &&
+                    !updatedUser.getPassword().matches("^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,12}$")) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().write("{\"error\": \"Password must be 8-12 characters and include at least one special character.\"}");
+                response.getWriter().write(
+                        "{\"error\": \"Password must be 8-12 characters and include at least one special character.\"}");
                 return;
             }
 
             BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-            if (updatedUser.getPassword() != null && !updatedUser.getPassword().startsWith("$2a$")) { // Not already hashed
+            if (updatedUser.getPassword() != null && !updatedUser.getPassword().startsWith("$2a$")) { // Not already
+                                                                                                      // hashed
                 String hashedPassword = encoder.encode(updatedUser.getPassword());
                 updatedUser.setPassword(hashedPassword);
             }
@@ -245,14 +247,11 @@ public class UserServlet extends HttpServlet {
 
             // Check if the user exists
             SearchRequest searchRequest = SearchRequest.of(s -> s
-                .index("users")
-                .query(q -> q
-                    .term(t -> t
-                        .field("name")
-                        .value(updatedUser.getName())
-                    )
-                )
-            );
+                    .index("users")
+                    .query(q -> q
+                            .term(t -> t
+                                    .field("name")
+                                    .value(updatedUser.getName()))));
             SearchResponse<User> searchResponse = client.search(searchRequest, User.class);
 
             System.out.println("Matched hits: " + searchResponse.hits().hits().size());
@@ -276,11 +275,10 @@ public class UserServlet extends HttpServlet {
 
             // Reindex user (overwrite the document)
             IndexRequest<User> indexRequest = IndexRequest.of(i -> i
-                .index("users")
-                .id(docId)
-                .document(updatedUser)
-                .refresh(Refresh.True)
-            );
+                    .index("users")
+                    .id(docId)
+                    .document(updatedUser)
+                    .refresh(Refresh.True));
 
             client.index(indexRequest);
 

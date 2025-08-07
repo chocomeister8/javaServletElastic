@@ -14,37 +14,38 @@ function LoginPage({ onLogin }) {
     setError('');
 
     try {
-        const response = await fetch('http://localhost:8080/servletapp/api/auth', {method: 'POST',
-          headers: {'Content-Type': 'application/json',},
-          body: JSON.stringify({name: username,password: password,}), credentials: 'include', // important to send/receive cookies
-        });
+      const response = await fetch('http://localhost:8080/servletapp/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', },
+        body: JSON.stringify({ name: username, password, }), credentials: 'include', // important to send/receive cookies
+      });
 
-        if (!response.ok) {
-          const data = await response.json();
-          setError(data.message || 'Invalid credentials');
-          return;
-        }
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.message || 'Invalid credentials');
+        return;
+      }
 
-        // Step 2: check user info (including status)
-        const userInfoResponse = await fetch('http://localhost:8080/servletapp/api/user-info', {
-          method: 'GET',
-          credentials: 'include',
-        });
+      // Step 2: check user info (including status)
+      const userInfoResponse = await fetch('http://localhost:8080/servletapp/api/user-info', {
+        method: 'GET',
+        credentials: 'include',
+      });
 
-        if (!userInfoResponse.ok) {
-          const data = await userInfoResponse.json();
-          setError(data.message || 'Unable to verify account status');
-          return;
-        }
+      if (!userInfoResponse.ok) {
+        const data = await userInfoResponse.json();
+        setError(data.message || 'Unable to verify account status');
+        return;
+      }
 
-        const userData = await userInfoResponse.json();
+      const userData = await userInfoResponse.json();
 
-        onLogin(); // Mark user as logged in in frontend state
-        navigate('/home');
+      onLogin(); // Mark user as logged in in frontend state
+      navigate('/home');
     } catch (err) {
-        setError('Login failed. Please try again later.');
+      setError('Login failed. Please try again later.');
     }
-  };  
+  };
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
@@ -55,11 +56,11 @@ function LoginPage({ onLogin }) {
 
           <Form onSubmit={handleLogin}>
             <FloatingLabel controlId="floatingUsername" label="Username" className="mb-3">
-              <Form.Control type="text" placeholder="Username" required value={username} onChange={(e) => setUsername(e.target.value)}/>
+              <Form.Control type="text" placeholder="Username" required value={username} onChange={(e) => setUsername(e.target.value)} />
             </FloatingLabel>
 
             <FloatingLabel controlId="floatingPassword" label="Password" className="mb-4">
-              <Form.Control type="password" placeholder="Password" required value={password}onChange={(e) => setPassword(e.target.value)}/>
+              <Form.Control type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </FloatingLabel>
 
             <Button variant="primary" type="submit" className="w-100">
